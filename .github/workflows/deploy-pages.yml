@@ -1,0 +1,89 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+
+      # Typst fonts and the Siglum TeX Live runtime (~217 MB). Keyed on the script, which pins
+      # versions and checksums, so the download only happens when they change.
+      - name: Cache engine assets
+        uses: actions/cache@v6
+        with:
+          path: apps/web/public/engines
+          key: engines-${{ hashFiles('apps/web/scripts/fetch-assets.mjs') }}
+
+      - run: pnpm --filter @qrtz/web fetch:assets
+
+      - uses: actions/configure-pages@v6
+        id: pages
+
+      - name: Build
+        run: pnpm --filter @qrtz/web build
+        env:
+          # Project sites live under /<repository>/; a custom domain serves from the root.
+          QUARTZ_BASE: ${{ steps.pages.outputs.base_path }}/
+
+      # GitHub Pages has no SPA fallback: serving index.html as 404.html lets /p/<id> URLs load the app.
+      - name: Add SPA fallback
+        run: |
+          cp apps/web/dist/index.html apps/web/dist/404.html
+          touch apps/web/dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5
+        id: deployment
+
+      # Engine bundles must arrive as raw gzip. A `Content-Encoding: gzip` header makes the browser
+      # decompress them before the LaTeX engine does, which corrupts the TeX format.
+      - name: Verify engine bundle headers
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          url="${PAGE_URL%/}/engines/latex/tl2026-0cc2592f50103429/core.data.gz"
+          headers=$(curl -sSI --compressed "$url")
+          echo "$headers"
+          if echo "$headers" | grep -qi '^content-encoding:'; then
+            echo "::error::GitHub Pages serves engine bundles with Content-Encoding; LaTeX compilation will fail."
+            exit 1
+          fi
