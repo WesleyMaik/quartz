@@ -5,7 +5,6 @@ import {
   ArrowLeft01Icon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
-  DiamondIcon,
   Loading03Icon,
   Moon02Icon,
   PlayIcon,
@@ -15,6 +14,7 @@ import { Link } from "react-router";
 import { useTheme } from "../../app/theme";
 import { formatTime } from "../../lib/format";
 import type { CompileState } from "../../services/compile-service";
+import { QuartzLogo } from "../shared/quartz-logo";
 
 export type SaveStatus = "saved" | "unsaved" | "saving";
 
@@ -89,9 +89,10 @@ export function WorkspaceHeader({
           size={14}
           className="text-muted-foreground transition-transform duration-200 ease-out group-hover:-translate-x-0.5"
         />
-        <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-          <Icon icon={DiamondIcon} size={13} />
-        </span>
+        <QuartzLogo
+          size={24}
+          className="transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110"
+        />
       </Link>
       <h1 className="truncate font-semibold tracking-tight">{project.title}</h1>
       <Badge>{engineLabel(project)}</Badge>

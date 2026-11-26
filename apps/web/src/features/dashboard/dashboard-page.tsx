@@ -8,7 +8,6 @@ import {
 import { Badge, Button, cn, DropdownMenu, Icon, Input, toast } from "@qrtz/ui";
 import {
   Add01Icon,
-  DiamondIcon,
   File01Icon,
   Folder01Icon,
   Moon02Icon,
@@ -24,6 +23,7 @@ import { useTheme } from "../../app/theme";
 import { formatBytes, formatRelative } from "../../lib/format";
 import { ConfirmDialog } from "../shared/confirm-dialog";
 import { PromptDialog } from "../shared/prompt-dialog";
+import { QuartzLogo } from "../shared/quartz-logo";
 import { NewProjectDialog } from "./new-project-dialog";
 
 type EngineFilter = "all" | Engine;
@@ -79,10 +79,11 @@ export function DashboardPage() {
     <div className="flex h-full bg-background">
       <aside className="flex w-60 shrink-0 flex-col gap-6 px-3 py-4">
         <div className="flex items-center justify-between pl-2">
-          <div className="flex items-center gap-2 font-semibold tracking-tight">
-            <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-              <Icon icon={DiamondIcon} size={15} />
-            </span>
+          <div className="group flex items-center gap-2 font-semibold tracking-tight">
+            <QuartzLogo
+              size={28}
+              className="transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110"
+            />
             Quartz
           </div>
           <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
