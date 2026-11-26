@@ -1,12 +1,13 @@
 import type { CompilerDiagnostic } from "@qrtz/compiler-core";
 import { isWithin, type Project, type ProjectPath, parseProjectId } from "@qrtz/document-core";
-import { cn, Icon, ResizableGroup, ResizableHandle, ResizablePanel } from "@qrtz/ui";
-import { Cancel01Icon } from "@qrtz/ui/icons";
+import { cn, Icon, ResizableGroup, ResizableHandle, ResizablePanel, Sheet } from "@qrtz/ui";
+import { ArrowUp01Icon, Cancel01Icon, File01Icon } from "@qrtz/ui/icons";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useParams } from "react-router";
 import { useServices } from "../../app/services";
 import { useDocumentTitle } from "../../app/use-document-title";
+import { MOBILE_QUERY, useMediaQuery } from "../../app/use-media-query";
 import { formatTime } from "../../lib/format";
 import { PdfPreview } from "../preview/pdf-preview";
 import { EditorPane, type EditorPaneHandle } from "./editor-pane";
@@ -15,6 +16,14 @@ import { ProblemsPanel } from "./problems-panel";
 import { type SaveStatus, WorkspaceHeader } from "./workspace-header";
 
 const AUTO_COMPILE_DELAY_MS = { typst: 600, latex: 2500 } as const;
+
+type MobileTab = "files" | "editor" | "preview";
+
+const MOBILE_TABS: readonly { readonly id: MobileTab; readonly label: string }[] = [
+  { id: "files", label: "Files" },
+  { id: "editor", label: "Editor" },
+  { id: "preview", label: "Preview" },
+];
 
 export function WorkspacePage() {
   const { projectId: rawId } = useParams();
@@ -54,6 +63,9 @@ function Workspace({ project }: { readonly project: Project }) {
   const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
   const [autoCompile, setAutoCompile] = useState(true);
   const [restored, setRestored] = useState(false);
+  const isMobile = useMediaQuery(MOBILE_QUERY);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("editor");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const autoTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const projectRef = useRef(project);
   projectRef.current = project;
@@ -172,6 +184,52 @@ function Workspace({ project }: { readonly project: Project }) {
   );
   const entryStem = project.entry.slice(project.entry.lastIndexOf("/") + 1).replace(/\.[^.]+$/, "");
 
+  const explorer = (onOpen: (path: ProjectPath) => void) => (
+    <FileExplorer
+      project={project}
+      entries={entries ?? []}
+      activePath={active}
+      dirtyPaths={dirty}
+      onOpen={onOpen}
+      onRenamed={onRenamed}
+      onDeleted={onDeleted}
+    />
+  );
+  const editor = (
+    <EditorPane
+      ref={editorRef}
+      projectId={project.id}
+      path={active}
+      diagnostics={compileState.diagnostics}
+      onSaved={onSaved}
+      onDirtyChange={onDirtyChange}
+      onCompileShortcut={() => void compileNow()}
+    />
+  );
+  const problems = (
+    <ProblemsPanel
+      diagnostics={compileState.diagnostics}
+      log={compileState.log}
+      onSelect={selectDiagnostic}
+    />
+  );
+  const preview = (
+    <PdfPreview
+      bytes={compileState.lastPdf?.bytes}
+      fileName={`${entryStem}.pdf`}
+      notice={notice}
+      emptyMessage={
+        compileState.status === "initializing"
+          ? "Loading the compiler. The first build downloads the engine once."
+          : compileState.status === "error"
+            ? "The build failed. See Problems for details."
+            : "Compile to see the PDF."
+      }
+    />
+  );
+  const activeName =
+    active === undefined ? "No file open" : active.slice(active.lastIndexOf("/") + 1);
+
   return (
     <div className="flex h-full flex-col bg-background">
       <WorkspaceHeader
@@ -183,104 +241,156 @@ function Workspace({ project }: { readonly project: Project }) {
         onCompile={() => void compileNow()}
         onCancel={() => compiler.cancel(project)}
       />
-      <div className="min-h-0 flex-1 pr-2 pb-2">
-        <ResizableGroup orientation="horizontal" id="quartz-workspace">
-          <ResizablePanel id="explorer" defaultSize="18%" minSize="160px" collapsible>
-            <FileExplorer
-              project={project}
-              entries={entries ?? []}
-              activePath={active}
-              dirtyPaths={dirty}
-              onOpen={open}
-              onRenamed={onRenamed}
-              onDeleted={onDeleted}
-            />
-          </ResizablePanel>
-          <ResizableHandle />
-          <ResizablePanel id="editor" defaultSize="41%" minSize="25%">
-            <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
-              <div
-                className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b px-2"
-                role="tablist"
-                aria-label="Open files"
+      {isMobile ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex h-11 shrink-0 border-b px-2" role="tablist" aria-label="Workspace">
+            {MOBILE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={mobileTab === tab.id}
+                onClick={() => setMobileTab(tab.id)}
+                className={cn(
+                  "relative flex-1 cursor-pointer font-medium text-muted-foreground transition-colors duration-150",
+                  mobileTab === tab.id && "text-foreground",
+                )}
               >
-                {tabs.map((path) => (
-                  <div
-                    key={path}
-                    className={cn(
-                      "group fade-in zoom-in-95 flex h-7 shrink-0 animate-in items-center gap-1 rounded-lg border pr-1 pl-2.5 text-xs transition-colors duration-150",
-                      path === active
-                        ? "border-border bg-muted/70 font-medium text-foreground"
-                        : "border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                    )}
-                  >
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={path === active}
-                      className="cursor-pointer whitespace-nowrap"
-                      onClick={() => setActive(path)}
-                      title={path}
-                    >
-                      {path.slice(path.lastIndexOf("/") + 1)}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Close ${path}`}
-                      onClick={() => close(path)}
-                      className="pressable flex size-5 cursor-pointer items-center justify-center rounded-md hover:bg-foreground/10"
-                    >
-                      {dirty.has(path) ? (
-                        <span className="size-1.5 rounded-full bg-foreground/70 group-hover:hidden" />
-                      ) : null}
-                      <Icon
-                        icon={Cancel01Icon}
-                        size={12}
-                        className={cn(dirty.has(path) && "hidden group-hover:block")}
-                      />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="min-h-0 flex-1">
-                <EditorPane
-                  ref={editorRef}
-                  projectId={project.id}
-                  path={active}
-                  diagnostics={compileState.diagnostics}
-                  onSaved={onSaved}
-                  onDirtyChange={onDirtyChange}
-                  onCompileShortcut={() => void compileNow()}
+                {tab.label}
+                <span
+                  className={cn(
+                    "absolute inset-x-6 bottom-0 h-0.5 origin-center scale-x-0 rounded-full bg-primary transition-transform duration-200 ease-out",
+                    mobileTab === tab.id && "scale-x-100",
+                  )}
                 />
+              </button>
+            ))}
+          </div>
+          <div className="relative min-h-0 flex-1">
+            {mobileTab === "files" ? (
+              <div className="fade-in absolute inset-0 animate-in">
+                {explorer((path) => {
+                  open(path);
+                  setMobileTab("editor");
+                })}
               </div>
-              <div className="h-40 shrink-0">
-                <ProblemsPanel
-                  diagnostics={compileState.diagnostics}
-                  log={compileState.log}
-                  onSelect={selectDiagnostic}
-                />
+            ) : null}
+            {/* Editor and preview stay mounted so buffers and the PDF viewer survive tab switches. */}
+            <div
+              className={cn(
+                "absolute inset-0 flex flex-col bg-card",
+                mobileTab !== "editor" && "pointer-events-none invisible",
+              )}
+            >
+              <div className="min-h-0 flex-1">{editor}</div>
+              <div className="h-28 shrink-0">{problems}</div>
+              <div className="flex h-14 shrink-0 items-center border-t px-3">
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  className="pressable flex min-w-0 cursor-pointer items-center gap-2 rounded-full border bg-muted/60 px-3 py-1.5 font-medium"
+                >
+                  <Icon icon={File01Icon} size={15} className="shrink-0 text-muted-foreground" />
+                  <span className="truncate">{activeName}</span>
+                  {active !== undefined && dirty.has(active) ? (
+                    <span className="size-1.5 shrink-0 rounded-full bg-warning" />
+                  ) : null}
+                  <Icon icon={ArrowUp01Icon} size={14} className="shrink-0 text-muted-foreground" />
+                </button>
               </div>
             </div>
-          </ResizablePanel>
-          <ResizableHandle />
-          <ResizablePanel id="preview" defaultSize="41%" minSize="20%">
-            <div className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
-              <PdfPreview
-                bytes={compileState.lastPdf?.bytes}
-                fileName={`${entryStem}.pdf`}
-                notice={notice}
-                emptyMessage={
-                  compileState.status === "initializing"
-                    ? "Loading the compiler. The first build downloads the engine once."
-                    : compileState.status === "error"
-                      ? "The build failed. See Problems for details."
-                      : "Compile to see the PDF."
-                }
-              />
+            <div
+              className={cn(
+                "absolute inset-0 bg-card",
+                mobileTab !== "preview" && "pointer-events-none invisible",
+              )}
+            >
+              {preview}
             </div>
-          </ResizablePanel>
-        </ResizableGroup>
-      </div>
+          </div>
+          <Sheet
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            title="Project files"
+            header={
+              <div className="flex items-center gap-2 border-b px-4 pt-2 pb-3 font-semibold">
+                <Icon icon={File01Icon} size={15} className="text-muted-foreground" />
+                <span className="truncate">{activeName}</span>
+              </div>
+            }
+            className="h-[60dvh]"
+          >
+            {explorer((path) => {
+              open(path);
+              setDrawerOpen(false);
+            })}
+          </Sheet>
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 pr-2 pb-2">
+          <ResizableGroup orientation="horizontal" id="quartz-workspace">
+            <ResizablePanel id="explorer" defaultSize="18%" minSize="160px" collapsible>
+              {explorer(open)}
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel id="editor" defaultSize="41%" minSize="25%">
+              <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+                <div
+                  className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b px-2"
+                  role="tablist"
+                  aria-label="Open files"
+                >
+                  {tabs.map((path) => (
+                    <div
+                      key={path}
+                      className={cn(
+                        "group fade-in zoom-in-95 flex h-7 shrink-0 animate-in items-center gap-1 rounded-lg border pr-1 pl-2.5 text-xs transition-colors duration-150",
+                        path === active
+                          ? "border-border bg-muted/70 font-medium text-foreground"
+                          : "border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={path === active}
+                        className="cursor-pointer whitespace-nowrap"
+                        onClick={() => setActive(path)}
+                        title={path}
+                      >
+                        {path.slice(path.lastIndexOf("/") + 1)}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Close ${path}`}
+                        onClick={() => close(path)}
+                        className="pressable flex size-5 cursor-pointer items-center justify-center rounded-md hover:bg-foreground/10"
+                      >
+                        {dirty.has(path) ? (
+                          <span className="size-1.5 rounded-full bg-foreground/70 group-hover:hidden" />
+                        ) : null}
+                        <Icon
+                          icon={Cancel01Icon}
+                          size={12}
+                          className={cn(dirty.has(path) && "hidden group-hover:block")}
+                        />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="min-h-0 flex-1">{editor}</div>
+                <div className="h-40 shrink-0">{problems}</div>
+              </div>
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel id="preview" defaultSize="41%" minSize="20%">
+              <div className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
+                {preview}
+              </div>
+            </ResizablePanel>
+          </ResizableGroup>
+        </div>
+      )}
     </div>
   );
 }

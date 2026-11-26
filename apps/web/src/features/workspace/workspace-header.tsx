@@ -95,8 +95,11 @@ export function WorkspaceHeader({
         />
       </Link>
       <h1 className="truncate font-semibold tracking-tight">{project.title}</h1>
-      <Badge>{engineLabel(project)}</Badge>
-      <span className="flex items-center gap-1.5 text-muted-foreground text-xs" aria-live="polite">
+      <Badge className="max-md:hidden">{engineLabel(project)}</Badge>
+      <span
+        className="flex items-center gap-1.5 text-muted-foreground text-xs max-md:hidden"
+        aria-live="polite"
+      >
         <span
           className={cn(
             "size-1.5 rounded-full transition-colors duration-300",
@@ -112,10 +115,10 @@ export function WorkspaceHeader({
         </span>
       </span>
       <div className="flex-1" />
-      <div className="text-xs" aria-live="polite">
+      <div className="text-xs max-md:hidden" aria-live="polite">
         <CompileIndicator state={compileState} />
       </div>
-      <div className="flex items-center gap-2 px-2 text-muted-foreground text-xs">
+      <div className="flex items-center gap-2 px-2 text-muted-foreground text-xs max-md:hidden">
         <Switch
           checked={autoCompile}
           onCheckedChange={onToggleAutoCompile}
@@ -125,11 +128,13 @@ export function WorkspaceHeader({
       </div>
       {busy ? (
         <Button variant="outline" size="sm" onClick={onCancel}>
-          <Icon icon={Cancel01Icon} size={14} /> Cancel
+          <Icon icon={Cancel01Icon} size={14} />
+          <span className="max-md:sr-only">Cancel</span>
         </Button>
       ) : (
         <Button size="sm" onClick={onCompile} title="Compile (Ctrl+Enter)">
-          <Icon icon={PlayIcon} size={14} /> Compile
+          <Icon icon={PlayIcon} size={14} />
+          <span className="max-md:sr-only">Compile</span>
         </Button>
       )}
       <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
