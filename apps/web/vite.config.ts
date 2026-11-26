@@ -44,9 +44,23 @@ function rawEngineAssets(): Plugin {
 const rawBase = process.env.QUARTZ_BASE ?? "/";
 const base = `/${rawBase.replace(/^\/+|\/+$/g, "")}/`.replace(/\/+/g, "/");
 
+/**
+ * Absolute site URL without a trailing slash, for share previews: Open Graph and Twitter cards
+ * need absolute image URLs. CI sets it from the Pages deployment; locally it falls back to the
+ * base path, which previews resolve against the page.
+ */
+const siteUrl = (process.env.QUARTZ_SITE_URL ?? base).replace(/\/+$/, "");
+
+function siteUrlPlaceholder(): Plugin {
+  return {
+    name: "quartz-site-url",
+    transformIndexHtml: (html) => html.replaceAll("%QUARTZ_SITE_URL%", siteUrl),
+  };
+}
+
 export default defineConfig({
   base,
-  plugins: [rawEngineAssets(), react(), tailwindcss()],
+  plugins: [rawEngineAssets(), siteUrlPlaceholder(), react(), tailwindcss()],
   resolve: {
     alias: {
       "blake3-wasm/browser.js": fileURLToPath(
