@@ -89,6 +89,12 @@ export function ProjectLoadingScreen({
       aria-valuenow={percent}
     >
       <div className="relative size-16 select-none">
+        {/* Glow lives behind the logo: a filter on the clipped image would be cut into a square. */}
+        <div
+          aria-hidden="true"
+          className="absolute -inset-6 rounded-full bg-primary/30 blur-2xl transition-opacity ease-out"
+          style={{ opacity: progress, transitionDuration: finishing }}
+        />
         <img
           src={LOGO_URL}
           alt=""
@@ -99,7 +105,7 @@ export function ProjectLoadingScreen({
           src={LOGO_URL}
           alt=""
           draggable={false}
-          className="absolute inset-0 size-full object-contain drop-shadow-[0_0_12px_color-mix(in_oklch,var(--primary)_45%,transparent)] transition-[clip-path] ease-out"
+          className="absolute inset-0 size-full object-contain transition-[clip-path] ease-out"
           style={{
             clipPath: `inset(${100 - progress * 100}% 0 0 0)`,
             transitionDuration: finishing,
