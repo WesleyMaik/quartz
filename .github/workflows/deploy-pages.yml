@@ -53,6 +53,8 @@ jobs:
         env:
           # Project sites live under /<repository>/; a custom domain serves from the root.
           QUARTZ_BASE: ${{ steps.pages.outputs.base_path }}/
+          # Absolute URL for Open Graph and Twitter card images.
+          QUARTZ_SITE_URL: ${{ steps.pages.outputs.base_url }}
 
       # GitHub Pages has no SPA fallback: serving index.html as 404.html lets /p/<id> URLs load the app.
       - name: Add SPA fallback
