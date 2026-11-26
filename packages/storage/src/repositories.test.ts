@@ -49,6 +49,23 @@ describe("ProjectRepository", () => {
     ]);
   });
 
+  it("sums stored bytes per project", async () => {
+    const first = await createProject();
+    const second = await projects.create(
+      { title: "Other", engine: "typst", entry: path("main.typ"), compiler: { engine: "typst" } },
+      [text("main.typ", "ção")],
+    );
+    if (!second.ok) throw new Error(second.error.message);
+    const sizes = await projects.sizes();
+    // "= Hi" (4 bytes) + "A" (1 byte); "ção" is 5 bytes in UTF-8.
+    expect(sizes.get(first.id)).toBe(5);
+    expect(sizes.get(second.value.id)).toBe(5);
+  });
+
+  it("reports no sizes when there are no projects", async () => {
+    expect((await projects.sizes()).size).toBe(0);
+  });
+
   it("duplicates contents under new ids", async () => {
     const project = await createProject();
     const copy = await projects.duplicate(project.id, "Copy");

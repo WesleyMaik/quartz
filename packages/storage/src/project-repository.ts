@@ -29,6 +29,15 @@ export class ProjectRepository {
     return this.db.projects.orderBy("updatedAt").reverse().toArray();
   }
 
+  /** Total stored bytes per project, summed from file metadata without reading contents. */
+  async sizes(): Promise<ReadonlyMap<ProjectId, number>> {
+    const totals = new Map<ProjectId, number>();
+    await this.db.files.each((file) => {
+      totals.set(file.projectId, (totals.get(file.projectId) ?? 0) + file.size);
+    });
+    return totals;
+  }
+
   get(id: ProjectId): Promise<Project | undefined> {
     return this.db.projects.get(id);
   }
