@@ -6,5 +6,6 @@ export { Icon, type IconProps } from "./components/icon";
 export { Input, type InputProps } from "./components/input";
 export { ContextMenu, DropdownMenu, type MenuAction } from "./components/menu";
 export { ResizableGroup, ResizableHandle, ResizablePanel } from "./components/resizable";
+export { Sheet, type SheetProps } from "./components/sheet";
 export { Switch, type SwitchProps } from "./components/switch";
 export { cn } from "./lib/utils";

@@ -36,15 +36,17 @@ function Items({ actions }: { readonly actions: readonly MenuAction[] }) {
 export function DropdownMenu({
   trigger,
   actions,
+  align = "end",
 }: {
   readonly trigger: ReactElement;
   readonly actions: readonly MenuAction[];
+  readonly align?: "start" | "center" | "end";
 }) {
   return (
     <BaseMenu.Root>
       <BaseMenu.Trigger render={trigger} />
       <BaseMenu.Portal>
-        <BaseMenu.Positioner sideOffset={4} align="end" className="z-50">
+        <BaseMenu.Positioner sideOffset={4} align={align} className="z-50">
           <BaseMenu.Popup className={popupClass}>
             <Items actions={actions} />
           </BaseMenu.Popup>
