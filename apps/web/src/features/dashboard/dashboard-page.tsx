@@ -8,6 +8,7 @@ import {
 import { Badge, Button, cn, DropdownMenu, Icon, Input, type MenuAction, toast } from "@qrtz/ui";
 import {
   Add01Icon,
+  ArrowDown01Icon,
   File01Icon,
   Folder01Icon,
   GridViewIcon,
@@ -62,6 +63,7 @@ export function DashboardPage() {
   const [storage, setStorage] = useState<StorageStatus | undefined>();
   const [filter, setFilter] = useState<EngineFilter>("all");
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const { view, setView } = useDashboardView();
   const sizes = useLiveQuery(() => projects.sizes(), [projects]);
 
@@ -131,7 +133,7 @@ export function DashboardPage() {
 
   return (
     <div className="flex h-full bg-background">
-      <aside className="flex w-60 shrink-0 flex-col gap-6 px-3 py-4">
+      <aside className="flex w-60 shrink-0 flex-col gap-6 px-3 py-4 max-md:hidden">
         <div className="flex items-center justify-between pl-2">
           <div className="group flex items-center gap-2 font-semibold tracking-tight">
             <QuartzLogo
@@ -209,12 +211,62 @@ export function DashboardPage() {
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden py-2 pr-2">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
-          <header className="flex h-16 shrink-0 items-center gap-3 border-b px-6">
-            <h1 className="shrink-0 font-semibold text-lg tracking-tight">{heading}</h1>
-            <div className="flex-1" />
-            <div className="relative min-w-0 max-w-72 flex-1">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden md:py-2 md:pr-2">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b px-4 md:hidden">
+          <div className="flex items-center gap-2 font-semibold tracking-tight">
+            <QuartzLogo size={26} />
+            Quartz
+          </div>
+          <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
+            <Icon
+              key={theme}
+              icon={theme === "dark" ? Sun03Icon : Moon02Icon}
+              className="fade-in spin-in-45 animate-in duration-300"
+            />
+          </Button>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-card md:rounded-xl md:border md:shadow-sm">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 md:h-16 md:gap-3 md:px-6">
+            <h1 className="shrink-0 font-semibold text-lg tracking-tight max-md:hidden">
+              {heading}
+            </h1>
+            {searchOpen ? null : (
+              <DropdownMenu
+                align="start"
+                trigger={
+                  <button
+                    type="button"
+                    className="pressable flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-1 font-semibold text-lg tracking-tight md:hidden"
+                  >
+                    <span className="truncate">{heading}</span>
+                    <Icon icon={ArrowDown01Icon} size={16} className="text-muted-foreground" />
+                  </button>
+                }
+                actions={FILTERS.map((item) => ({
+                  id: item.id,
+                  label: item.label,
+                  onSelect: () => setFilter(item.id),
+                }))}
+              />
+            )}
+            <div className="flex-1 max-md:hidden" />
+            {searchOpen ? null : <div className="flex-1 md:hidden" />}
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Search projects"
+              onClick={() => setSearchOpen(true)}
+              className={cn("size-9 md:hidden", searchOpen && "hidden")}
+            >
+              <Icon icon={Search01Icon} size={18} />
+            </Button>
+            <div
+              className={cn(
+                "relative min-w-0 flex-1 md:max-w-72",
+                !searchOpen && "max-md:hidden",
+                searchOpen && "fade-in slide-in-from-right-2 animate-in md:animate-none",
+              )}
+            >
               <Icon
                 icon={Search01Icon}
                 size={15}
@@ -227,9 +279,13 @@ export function DashboardPage() {
                 placeholder="Search projects"
                 aria-label="Search projects"
                 className="rounded-full pl-9"
+                autoFocus={searchOpen}
+                onBlur={() => {
+                  if (query === "") setSearchOpen(false);
+                }}
               />
             </div>
-            <fieldset className="flex shrink-0 items-center rounded-full bg-muted p-0.5">
+            <fieldset className="flex shrink-0 items-center rounded-full bg-muted p-0.5 max-sm:hidden">
               <legend className="sr-only">Layout</legend>
               {VIEWS.map((item) => (
                 <button
@@ -248,8 +304,13 @@ export function DashboardPage() {
                 </button>
               ))}
             </fieldset>
-            <Button onClick={() => setCreating(true)}>
-              <Icon icon={Add01Icon} size={15} /> New
+            <Button
+              onClick={() => setCreating(true)}
+              aria-label="New project"
+              className="max-md:size-9 max-md:px-0"
+            >
+              <Icon icon={Add01Icon} size={15} />
+              <span className="max-md:hidden">New</span>
             </Button>
           </header>
 
@@ -275,7 +336,7 @@ export function DashboardPage() {
             ) : view === "grid" ? (
               <ul
                 key="grid"
-                className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 p-6"
+                className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 p-4 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-4 md:p-6"
                 aria-label="Projects"
               >
                 {visible.map((project, index) => (
