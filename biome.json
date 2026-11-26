@@ -2,7 +2,16 @@
   "$schema": "https://biomejs.dev/schemas/2.6.9/schema.json",
   "vcs": { "enabled": false },
   "files": {
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/.turbo", "!**/public/engines", "!docs"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.turbo",
+      "!**/public/engines",
+      "!docs",
+      "!.agents",
+      "!.claude"
+    ]
   },
   "formatter": {
     "enabled": true,
