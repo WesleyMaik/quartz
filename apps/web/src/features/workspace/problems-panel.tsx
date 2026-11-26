@@ -18,7 +18,7 @@ export function ProblemsPanel({
 
   return (
     <section className="flex h-full flex-col border-t" aria-label="Problems and log">
-      <div className="flex h-8 shrink-0 items-center gap-1 px-2 text-xs" role="tablist">
+      <div className="flex h-9 shrink-0 items-center gap-1 px-2 text-xs" role="tablist">
         {(["problems", "log"] as const).map((id) => (
           <button
             key={id}
@@ -27,7 +27,7 @@ export function ProblemsPanel({
             aria-selected={tab === id}
             onClick={() => setTab(id)}
             className={cn(
-              "cursor-pointer rounded-sm px-2 py-1 font-medium text-muted-foreground uppercase tracking-wide",
+              "pressable cursor-pointer rounded-full px-2.5 py-1 font-medium text-muted-foreground hover:text-foreground",
               tab === id && "bg-muted text-foreground",
             )}
           >
@@ -47,11 +47,15 @@ export function ProblemsPanel({
         ) : (
           <ul>
             {diagnostics.map((diagnostic, index) => (
-              <li key={`${diagnostic.file}:${diagnostic.line}:${index}`}>
+              <li
+                key={`${diagnostic.file}:${diagnostic.line}:${index}`}
+                className="fade-in slide-in-from-left-1 animate-in fill-mode-both"
+                style={{ animationDelay: `${Math.min(index, 10) * 20}ms` }}
+              >
                 <button
                   type="button"
                   onClick={() => onSelect(diagnostic)}
-                  className="flex w-full cursor-pointer items-start gap-2 rounded-sm px-1 py-1 text-left hover:bg-muted"
+                  className="flex w-full cursor-pointer items-start gap-2 rounded-md px-1.5 py-1 text-left transition-colors duration-150 hover:bg-muted"
                 >
                   <Icon
                     icon={diagnostic.severity === "error" ? AlertCircleIcon : Alert02Icon}

@@ -1,5 +1,5 @@
 import type { Project } from "@qrtz/document-core";
-import { Badge, Button, cn, Icon } from "@qrtz/ui";
+import { Badge, Button, cn, Icon, Switch } from "@qrtz/ui";
 import {
   AlertCircleIcon,
   ArrowLeft01Icon,
@@ -28,7 +28,7 @@ function CompileIndicator({ state }: { readonly state: CompileState }) {
     state.status === "initializing" || state.status === "compiling" || state.status === "queued";
   if (busy) {
     return (
-      <span className="flex items-center gap-1.5 text-muted-foreground">
+      <span className="fade-in flex animate-in items-center gap-1.5 text-muted-foreground">
         <Icon icon={Loading03Icon} size={14} className="animate-spin" />{" "}
         {state.message || "Compiling"}
       </span>
@@ -36,15 +36,19 @@ function CompileIndicator({ state }: { readonly state: CompileState }) {
   }
   if (state.status === "error") {
     return (
-      <span className="flex items-center gap-1.5 text-destructive">
+      <span className="fade-in slide-in-from-top-1 flex animate-in items-center gap-1.5 text-destructive">
         <Icon icon={AlertCircleIcon} size={14} /> {state.message}
       </span>
     );
   }
   if (state.status === "success" && state.lastPdf !== undefined) {
     return (
-      <span className="flex items-center gap-1.5 text-muted-foreground">
-        <Icon icon={CheckmarkCircle02Icon} size={14} className="text-success" />
+      <span className="fade-in flex animate-in items-center gap-1.5 text-muted-foreground">
+        <Icon
+          icon={CheckmarkCircle02Icon}
+          size={14}
+          className="zoom-in-50 animate-in text-success duration-300"
+        />
         Built {formatTime(state.lastPdf.builtAt)}
         {state.durationMs === undefined ? "" : ` in ${Math.round(state.durationMs)} ms`}
       </span>
@@ -74,39 +78,50 @@ export function WorkspaceHeader({
   const { theme, toggle } = useTheme();
   const busy = compileState.status === "compiling" || compileState.status === "initializing";
   return (
-    <header className="flex h-11 shrink-0 items-center gap-3 border-b px-3">
+    <header className="flex h-12 shrink-0 items-center gap-3 px-3">
       <Link
         to="/"
-        className="flex items-center gap-1.5 font-semibold"
+        className="pressable group flex items-center gap-1.5 rounded-md py-1 pr-1 pl-0.5 font-semibold hover:bg-muted"
         aria-label="Back to projects"
       >
-        <Icon icon={ArrowLeft01Icon} size={14} className="text-muted-foreground" />
-        <Icon icon={DiamondIcon} size={16} className="text-primary" />
+        <Icon
+          icon={ArrowLeft01Icon}
+          size={14}
+          className="text-muted-foreground transition-transform duration-200 ease-out group-hover:-translate-x-0.5"
+        />
+        <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+          <Icon icon={DiamondIcon} size={13} />
+        </span>
       </Link>
-      <h1 className="truncate font-medium">{project.title}</h1>
+      <h1 className="truncate font-semibold tracking-tight">{project.title}</h1>
       <Badge>{engineLabel(project)}</Badge>
-      <span
-        className={cn(
-          "text-xs",
-          saveStatus === "saved" ? "text-muted-foreground" : "text-foreground",
-        )}
-        aria-live="polite"
-      >
-        {saveStatus === "saved" ? "Saved" : saveStatus === "saving" ? "Saving…" : "Unsaved changes"}
+      <span className="flex items-center gap-1.5 text-muted-foreground text-xs" aria-live="polite">
+        <span
+          className={cn(
+            "size-1.5 rounded-full transition-colors duration-300",
+            saveStatus === "saved" ? "bg-success" : "bg-warning",
+          )}
+        />
+        <span className={cn(saveStatus !== "saved" && "text-foreground")}>
+          {saveStatus === "saved"
+            ? "Saved"
+            : saveStatus === "saving"
+              ? "Saving…"
+              : "Unsaved changes"}
+        </span>
       </span>
       <div className="flex-1" />
       <div className="text-xs" aria-live="polite">
         <CompileIndicator state={compileState} />
       </div>
-      <label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground text-xs">
-        <input
-          type="checkbox"
+      <div className="flex items-center gap-2 px-2 text-muted-foreground text-xs">
+        <Switch
           checked={autoCompile}
-          onChange={onToggleAutoCompile}
-          className="accent-primary"
+          onCheckedChange={onToggleAutoCompile}
+          aria-label="Auto compile"
         />
-        Auto
-      </label>
+        <span aria-hidden="true">Auto</span>
+      </div>
       {busy ? (
         <Button variant="outline" size="sm" onClick={onCancel}>
           <Icon icon={Cancel01Icon} size={14} /> Cancel
@@ -117,7 +132,11 @@ export function WorkspaceHeader({
         </Button>
       )}
       <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
-        <Icon icon={theme === "dark" ? Sun03Icon : Moon02Icon} />
+        <Icon
+          key={theme}
+          icon={theme === "dark" ? Sun03Icon : Moon02Icon}
+          className="fade-in spin-in-45 animate-in duration-300"
+        />
       </Button>
     </header>
   );

@@ -1,12 +1,21 @@
-import type { Project } from "@qrtz/document-core";
+import type { Engine, Project } from "@qrtz/document-core";
 import {
   isNearQuota,
   readStorageStatus,
   requestPersistentStorage,
   type StorageStatus,
 } from "@qrtz/storage";
-import { Badge, Button, DropdownMenu, Icon, toast } from "@qrtz/ui";
-import { Add01Icon, DiamondIcon, Moon02Icon, MoreHorizontalIcon, Sun03Icon } from "@qrtz/ui/icons";
+import { Badge, Button, cn, DropdownMenu, Icon, Input, toast } from "@qrtz/ui";
+import {
+  Add01Icon,
+  DiamondIcon,
+  File01Icon,
+  Folder01Icon,
+  Moon02Icon,
+  MoreHorizontalIcon,
+  Search01Icon,
+  Sun03Icon,
+} from "@qrtz/ui/icons";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -17,6 +26,17 @@ import { ConfirmDialog } from "../shared/confirm-dialog";
 import { PromptDialog } from "../shared/prompt-dialog";
 import { NewProjectDialog } from "./new-project-dialog";
 
+type EngineFilter = "all" | Engine;
+
+const FILTERS: readonly { readonly id: EngineFilter; readonly label: string }[] = [
+  { id: "all", label: "All projects" },
+  { id: "latex", label: "LaTeX" },
+  { id: "typst", label: "Typst" },
+];
+
+/** Rows beyond this index appear without a stagger delay, so long lists do not feel slow. */
+const MAX_STAGGERED_ROWS = 12;
+
 export function DashboardPage() {
   const { db, projects } = useServices();
   const navigate = useNavigate();
@@ -26,6 +46,8 @@ export function DashboardPage() {
   const [renaming, setRenaming] = useState<Project | undefined>();
   const [deleting, setDeleting] = useState<Project | undefined>();
   const [storage, setStorage] = useState<StorageStatus | undefined>();
+  const [filter, setFilter] = useState<EngineFilter>("all");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void readStorageStatus().then(setStorage);
@@ -41,102 +63,211 @@ export function DashboardPage() {
     navigate(`/p/${project.id}`);
   };
 
-  return (
-    <div className="flex h-full flex-col">
-      <header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2 font-semibold">
-          <Icon icon={DiamondIcon} className="text-primary" /> Quartz
-        </div>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
-          <Icon icon={theme === "dark" ? Sun03Icon : Moon02Icon} />
-        </Button>
-      </header>
+  const needle = query.trim().toLowerCase();
+  const visible = list?.filter(
+    (project) =>
+      (filter === "all" || project.engine === filter) &&
+      (needle === "" || project.title.toLowerCase().includes(needle)),
+  );
+  const heading = FILTERS.find((item) => item.id === filter)?.label ?? "Projects";
+  const usageRatio =
+    storage?.usageBytes !== undefined && storage.quotaBytes !== undefined && storage.quotaBytes > 0
+      ? Math.min(1, storage.usageBytes / storage.quotaBytes)
+      : undefined;
 
-      <main className="mx-auto w-full max-w-4xl flex-1 overflow-auto px-6 py-8">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <h1 className="font-semibold text-xl">Projects</h1>
-            <p className="mt-1 text-muted-foreground">
-              Stored locally in this browser. Nothing leaves your device.
-            </p>
+  return (
+    <div className="flex h-full bg-background">
+      <aside className="flex w-60 shrink-0 flex-col gap-6 px-3 py-4">
+        <div className="flex items-center justify-between pl-2">
+          <div className="flex items-center gap-2 font-semibold tracking-tight">
+            <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+              <Icon icon={DiamondIcon} size={15} />
+            </span>
+            Quartz
           </div>
-          <Button onClick={() => setCreating(true)}>
-            <Icon icon={Add01Icon} size={15} /> New project
+          <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
+            <Icon
+              key={theme}
+              icon={theme === "dark" ? Sun03Icon : Moon02Icon}
+              className="fade-in spin-in-45 animate-in duration-300"
+            />
           </Button>
         </div>
 
-        {list === undefined ? null : list.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-10 text-center">
-            <p className="font-medium">No projects yet</p>
-            <p className="mt-1 text-muted-foreground">
-              Create a LaTeX or Typst project to start writing.
-            </p>
-            <Button className="mt-4" onClick={() => setCreating(true)}>
-              Create your first project
-            </Button>
-          </div>
-        ) : (
-          <ul className="divide-y rounded-lg border" aria-label="Projects">
-            {list.map((project) => (
-              <li key={project.id} className="flex items-center gap-3 px-4 py-3 hover:bg-panel">
-                <button
-                  type="button"
-                  className="min-w-0 flex-1 cursor-pointer text-left"
-                  onClick={() => navigate(`/p/${project.id}`)}
-                >
-                  <div className="truncate font-medium">{project.title}</div>
-                  <div className="text-muted-foreground text-xs">
-                    Edited {formatRelative(project.updatedAt)}
-                  </div>
-                </button>
-                <Badge>{project.engine === "latex" ? "LaTeX" : "Typst"}</Badge>
-                <DropdownMenu
-                  trigger={
-                    <Button variant="ghost" size="icon" aria-label={`Actions for ${project.title}`}>
-                      <Icon icon={MoreHorizontalIcon} />
-                    </Button>
-                  }
-                  actions={[
-                    { id: "open", label: "Open", onSelect: () => navigate(`/p/${project.id}`) },
-                    { id: "rename", label: "Rename", onSelect: () => setRenaming(project) },
-                    {
-                      id: "duplicate",
-                      label: "Duplicate",
-                      onSelect: async () => {
-                        const result = await projects.duplicate(project);
-                        if (!result.ok) toast.error(result.error.message);
-                      },
-                    },
-                    {
-                      id: "delete",
-                      label: "Delete",
-                      destructive: true,
-                      onSelect: () => setDeleting(project),
-                    },
-                  ]}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </main>
+        <nav aria-label="Project filters" className="flex flex-col gap-0.5">
+          {FILTERS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-current={filter === item.id ? "page" : undefined}
+              onClick={() => setFilter(item.id)}
+              className={cn(
+                "pressable flex h-9 cursor-pointer items-center gap-2.5 rounded-md px-3 text-left text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                filter === item.id && "bg-muted font-medium text-foreground",
+              )}
+            >
+              <Icon icon={item.id === "all" ? Folder01Icon : File01Icon} size={15} />
+              {item.label}
+              {list === undefined ? null : (
+                <span className="ml-auto text-muted-foreground text-xs tabular-nums">
+                  {item.id === "all"
+                    ? list.length
+                    : list.filter((project) => project.engine === item.id).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
 
-      <footer className="flex h-9 shrink-0 items-center gap-3 border-t px-4 text-muted-foreground text-xs">
-        {storage?.usageBytes === undefined ? (
-          <span>Storage usage unavailable</span>
-        ) : (
-          <span className={isNearQuota(storage) ? "text-warning" : undefined}>
-            {formatBytes(storage.usageBytes)} used
-            {storage.quotaBytes === undefined ? "" : ` of ${formatBytes(storage.quotaBytes)}`}
-          </span>
-        )}
-        <span>·</span>
-        <span>
-          {storage?.persisted === true
-            ? "Persistent storage granted"
-            : "Storage may be cleared by the browser. Clearing site data deletes projects."}
-        </span>
-      </footer>
+        <div className="mt-auto rounded-lg border bg-card p-3 text-muted-foreground text-xs shadow-xs">
+          {storage?.usageBytes === undefined ? (
+            <p>Storage usage unavailable</p>
+          ) : (
+            <>
+              <p
+                className={cn(
+                  "font-medium text-foreground",
+                  isNearQuota(storage) && "text-warning",
+                )}
+              >
+                {formatBytes(storage.usageBytes)} used
+                {storage.quotaBytes === undefined ? "" : ` of ${formatBytes(storage.quotaBytes)}`}
+              </p>
+              {usageRatio === undefined ? null : (
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={cn(
+                      "h-full min-w-1 rounded-full transition-[width] duration-500 ease-out",
+                      isNearQuota(storage) ? "bg-warning" : "bg-primary",
+                    )}
+                    style={{ width: `${usageRatio * 100}%` }}
+                  />
+                </div>
+              )}
+            </>
+          )}
+          <p className="mt-2 leading-relaxed">
+            {storage?.persisted === true
+              ? "Persistent storage granted. Nothing leaves your device."
+              : "Storage may be cleared by the browser. Clearing site data deletes projects."}
+          </p>
+        </div>
+      </aside>
+
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden py-2 pr-2">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+          <header className="flex h-16 shrink-0 items-center gap-3 border-b px-6">
+            <h1 className="truncate font-semibold text-lg tracking-tight">{heading}</h1>
+            <div className="flex-1" />
+            <div className="relative w-full max-w-72">
+              <Icon
+                icon={Search01Icon}
+                size={15}
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search projects"
+                aria-label="Search projects"
+                className="rounded-full pl-9"
+              />
+            </div>
+            <Button onClick={() => setCreating(true)}>
+              <Icon icon={Add01Icon} size={15} /> New
+            </Button>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-auto">
+            {visible === undefined ? null : list?.length === 0 ? (
+              <div className="fade-in zoom-in-95 m-auto flex h-full max-w-sm animate-in flex-col items-center justify-center text-center duration-300">
+                <span className="mb-4 flex size-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                  <Icon icon={File01Icon} size={22} />
+                </span>
+                <p className="font-medium text-base">No projects yet</p>
+                <p className="mt-1 text-muted-foreground">
+                  Create a LaTeX or Typst project to start writing. Everything stays in this
+                  browser.
+                </p>
+                <Button className="mt-5" onClick={() => setCreating(true)}>
+                  <Icon icon={Add01Icon} size={15} /> Create your first project
+                </Button>
+              </div>
+            ) : visible.length === 0 ? (
+              <p className="fade-in animate-in p-10 text-center text-muted-foreground">
+                No projects match your search.
+              </p>
+            ) : (
+              <>
+                <div className="flex h-9 items-center gap-3 px-6 text-muted-foreground text-xs">
+                  <span className="flex-1">Name</span>
+                  <span className="w-28 text-right">Edited</span>
+                  <span className="w-7" />
+                </div>
+                <ul className="px-3 pb-3" aria-label="Projects">
+                  {visible.map((project, index) => (
+                    <li
+                      key={project.id}
+                      className="group fade-in slide-in-from-bottom-1 flex animate-in items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150 fill-mode-both hover:bg-muted/60"
+                      style={{ animationDelay: `${Math.min(index, MAX_STAGGERED_ROWS) * 25}ms` }}
+                    >
+                      <button
+                        type="button"
+                        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-md text-left"
+                        onClick={() => navigate(`/p/${project.id}`)}
+                      >
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-[color,border-color] duration-150 group-hover:border-primary/30 group-hover:text-primary">
+                          <Icon icon={File01Icon} size={16} />
+                        </span>
+                        <span className="truncate font-medium">{project.title}</span>
+                        <Badge>{project.engine === "latex" ? "LaTeX" : "Typst"}</Badge>
+                      </button>
+                      <span className="w-28 text-right text-muted-foreground text-xs">
+                        {formatRelative(project.updatedAt)}
+                      </span>
+                      <DropdownMenu
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Actions for ${project.title}`}
+                            className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[popup-open]:opacity-100"
+                          >
+                            <Icon icon={MoreHorizontalIcon} />
+                          </Button>
+                        }
+                        actions={[
+                          {
+                            id: "open",
+                            label: "Open",
+                            onSelect: () => navigate(`/p/${project.id}`),
+                          },
+                          { id: "rename", label: "Rename", onSelect: () => setRenaming(project) },
+                          {
+                            id: "duplicate",
+                            label: "Duplicate",
+                            onSelect: async () => {
+                              const result = await projects.duplicate(project);
+                              if (!result.ok) toast.error(result.error.message);
+                            },
+                          },
+                          {
+                            id: "delete",
+                            label: "Delete",
+                            destructive: true,
+                            onSelect: () => setDeleting(project),
+                          },
+                        ]}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+      </main>
 
       <NewProjectDialog open={creating} onOpenChange={setCreating} onCreated={afterCreate} />
       <PromptDialog

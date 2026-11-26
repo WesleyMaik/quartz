@@ -63,8 +63,9 @@ export function NewProjectDialog({
             <label
               key={template.id}
               className={cn(
-                "flex cursor-pointer flex-col rounded-md border px-3 py-2 hover:bg-panel",
-                template.id === templateId && "border-primary bg-accent text-accent-foreground",
+                "pressable flex cursor-pointer flex-col rounded-lg border px-3 py-2.5 hover:border-primary/40 hover:bg-muted/50 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/30",
+                template.id === templateId &&
+                  "border-primary bg-accent text-accent-foreground ring-3 ring-primary/15 hover:border-primary hover:bg-accent",
               )}
             >
               <input

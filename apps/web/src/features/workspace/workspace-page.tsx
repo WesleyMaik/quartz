@@ -6,6 +6,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useParams } from "react-router";
 import { useServices } from "../../app/services";
+import { useDocumentTitle } from "../../app/use-document-title";
 import { formatTime } from "../../lib/format";
 import { PdfPreview } from "../preview/pdf-preview";
 import { EditorPane, type EditorPaneHandle } from "./editor-pane";
@@ -27,7 +28,7 @@ export function WorkspacePage() {
   if (project === undefined) return null;
   if (project === null) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2">
+      <div className="fade-in flex h-full animate-in flex-col items-center justify-center gap-2">
         <p className="font-medium">Project not found</p>
         <Link to="/" className="text-primary underline">
           Back to projects
@@ -166,10 +167,13 @@ function Workspace({ project }: { readonly project: Project }) {
     if (!compileState.stale || compileState.lastPdf === undefined) return undefined;
     return `Build failed. Showing last successful build from ${formatTime(compileState.lastPdf.builtAt)}`;
   }, [compileState.stale, compileState.lastPdf]);
+  useDocumentTitle(
+    `Quartz - ${active === undefined ? project.title : active.slice(active.lastIndexOf("/") + 1)}`,
+  );
   const entryStem = project.entry.slice(project.entry.lastIndexOf("/") + 1).replace(/\.[^.]+$/, "");
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-background">
       <WorkspaceHeader
         project={project}
         saveStatus={saveStatus}
@@ -179,7 +183,7 @@ function Workspace({ project }: { readonly project: Project }) {
         onCompile={() => void compileNow()}
         onCancel={() => compiler.cancel(project)}
       />
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 pr-2 pb-2">
         <ResizableGroup orientation="horizontal" id="quartz-workspace">
           <ResizablePanel id="explorer" defaultSize="18%" minSize="160px" collapsible>
             <FileExplorer
@@ -194,9 +198,9 @@ function Workspace({ project }: { readonly project: Project }) {
           </ResizablePanel>
           <ResizableHandle />
           <ResizablePanel id="editor" defaultSize="41%" minSize="25%">
-            <div className="flex h-full flex-col">
+            <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
               <div
-                className="flex h-9 shrink-0 items-end overflow-x-auto border-b bg-panel"
+                className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b px-2"
                 role="tablist"
                 aria-label="Open files"
               >
@@ -204,10 +208,10 @@ function Workspace({ project }: { readonly project: Project }) {
                   <div
                     key={path}
                     className={cn(
-                      "group flex h-full items-center gap-1 border-r pr-1 pl-3 text-xs",
+                      "group fade-in zoom-in-95 flex h-7 shrink-0 animate-in items-center gap-1 rounded-lg border pr-1 pl-2.5 text-xs transition-colors duration-150",
                       path === active
-                        ? "bg-background text-foreground"
-                        : "text-muted-foreground hover:bg-muted",
+                        ? "border-border bg-muted/70 font-medium text-foreground"
+                        : "border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                     )}
                   >
                     <button
@@ -224,7 +228,7 @@ function Workspace({ project }: { readonly project: Project }) {
                       type="button"
                       aria-label={`Close ${path}`}
                       onClick={() => close(path)}
-                      className="flex size-5 cursor-pointer items-center justify-center rounded-sm hover:bg-muted"
+                      className="pressable flex size-5 cursor-pointer items-center justify-center rounded-md hover:bg-foreground/10"
                     >
                       {dirty.has(path) ? (
                         <span className="size-1.5 rounded-full bg-foreground/70 group-hover:hidden" />
@@ -260,18 +264,20 @@ function Workspace({ project }: { readonly project: Project }) {
           </ResizablePanel>
           <ResizableHandle />
           <ResizablePanel id="preview" defaultSize="41%" minSize="20%">
-            <PdfPreview
-              bytes={compileState.lastPdf?.bytes}
-              fileName={`${entryStem}.pdf`}
-              notice={notice}
-              emptyMessage={
-                compileState.status === "initializing"
-                  ? "Loading the compiler. The first build downloads the engine once."
-                  : compileState.status === "error"
-                    ? "The build failed. See Problems for details."
-                    : "Compile to see the PDF."
-              }
-            />
+            <div className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
+              <PdfPreview
+                bytes={compileState.lastPdf?.bytes}
+                fileName={`${entryStem}.pdf`}
+                notice={notice}
+                emptyMessage={
+                  compileState.status === "initializing"
+                    ? "Loading the compiler. The first build downloads the engine once."
+                    : compileState.status === "error"
+                      ? "The build failed. See Problems for details."
+                      : "Compile to see the PDF."
+                }
+              />
+            </div>
           </ResizablePanel>
         </ResizableGroup>
       </div>

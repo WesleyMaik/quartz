@@ -1,7 +1,6 @@
 import type { FileEntry, Project, ProjectPath } from "@qrtz/document-core";
 import { Button, ContextMenu, cn, Icon, type MenuAction, toast } from "@qrtz/ui";
 import {
-  ArrowDown01Icon,
   ArrowRight01Icon,
   File01Icon,
   FileAddIcon,
@@ -112,17 +111,21 @@ export function FileExplorer({
             aria-expanded={isFolder ? open : undefined}
             aria-current={node.path === activePath ? "page" : undefined}
             className={cn(
-              "flex h-7 w-full cursor-pointer items-center gap-1.5 rounded-sm pr-2 text-left hover:bg-muted",
-              node.path === activePath && "bg-accent text-accent-foreground hover:bg-accent",
+              "flex h-7 w-full cursor-pointer items-center gap-1.5 rounded-md pr-2 text-left text-muted-foreground transition-colors duration-150 hover:bg-muted/70 hover:text-foreground",
+              node.path === activePath &&
+                "bg-accent font-medium text-accent-foreground hover:bg-accent hover:text-accent-foreground",
             )}
             style={{ paddingLeft: 6 + depth * 12 }}
             onClick={() => (isFolder ? toggle(node.path) : onOpen(node.path))}
           >
             {isFolder ? (
               <Icon
-                icon={open ? ArrowDown01Icon : ArrowRight01Icon}
+                icon={ArrowRight01Icon}
                 size={12}
-                className="text-muted-foreground"
+                className={cn(
+                  "text-muted-foreground transition-transform duration-200 ease-out",
+                  open && "rotate-90",
+                )}
               />
             ) : (
               <span className="w-3" />
@@ -130,21 +133,23 @@ export function FileExplorer({
             <Icon
               icon={isFolder ? (open ? FolderOpenIcon : Folder01Icon) : File01Icon}
               size={15}
-              className="text-muted-foreground"
+              className="shrink-0 opacity-80"
             />
             <span className="truncate">{node.name}</span>
             {node.path === project.entry ? (
               <Icon icon={StarIcon} size={12} className="text-warning" aria-label="Main document" />
             ) : null}
             {dirtyPaths.has(node.path) ? (
-              <span className="ml-auto size-1.5 rounded-full bg-foreground/60">
+              <span className="zoom-in-0 ml-auto size-1.5 shrink-0 animate-in rounded-full bg-warning">
                 <span className="sr-only">Unsaved</span>
               </span>
             ) : null}
           </button>
         </ContextMenu>
         {open && node.children.length > 0 ? (
-          <ul>{node.children.map((child) => renderNode(child, depth + 1))}</ul>
+          <ul className="fade-in slide-in-from-top-1 animate-in duration-150">
+            {node.children.map((child) => renderNode(child, depth + 1))}
+          </ul>
         ) : null}
       </li>
     );
@@ -168,11 +173,9 @@ export function FileExplorer({
   })();
 
   return (
-    <nav className="flex h-full flex-col bg-panel" aria-label="Project files">
-      <div className="flex h-9 shrink-0 items-center justify-between border-b px-2">
-        <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-          Files
-        </span>
+    <nav className="flex h-full flex-col bg-background" aria-label="Project files">
+      <div className="flex h-11 shrink-0 items-center justify-between pr-1 pl-3">
+        <span className="font-semibold text-sm tracking-tight">Files</span>
         <div className="flex">
           <Button
             variant="ghost"
@@ -203,7 +206,7 @@ export function FileExplorer({
           </Button>
         </div>
       </div>
-      <ul className="flex-1 overflow-auto p-1">{tree.map((node) => renderNode(node, 0))}</ul>
+      <ul className="flex-1 overflow-auto px-2 pb-2">{tree.map((node) => renderNode(node, 0))}</ul>
 
       <input
         ref={uploadRef}
