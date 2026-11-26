@@ -5,11 +5,13 @@ import {
   requestPersistentStorage,
   type StorageStatus,
 } from "@qrtz/storage";
-import { Badge, Button, cn, DropdownMenu, Icon, Input, toast } from "@qrtz/ui";
+import { Badge, Button, cn, DropdownMenu, Icon, Input, type MenuAction, toast } from "@qrtz/ui";
 import {
   Add01Icon,
   File01Icon,
   Folder01Icon,
+  GridViewIcon,
+  ListViewIcon,
   Moon02Icon,
   MoreHorizontalIcon,
   Search01Icon,
@@ -25,6 +27,7 @@ import { ConfirmDialog } from "../shared/confirm-dialog";
 import { PromptDialog } from "../shared/prompt-dialog";
 import { QuartzLogo } from "../shared/quartz-logo";
 import { NewProjectDialog } from "./new-project-dialog";
+import { type DashboardView, useDashboardView } from "./use-dashboard-view";
 
 type EngineFilter = "all" | Engine;
 
@@ -33,6 +36,17 @@ const FILTERS: readonly { readonly id: EngineFilter; readonly label: string }[] 
   { id: "latex", label: "LaTeX" },
   { id: "typst", label: "Typst" },
 ];
+
+const VIEWS: readonly {
+  readonly id: DashboardView;
+  readonly label: string;
+  readonly icon: typeof GridViewIcon;
+}[] = [
+  { id: "list", label: "List view", icon: ListViewIcon },
+  { id: "grid", label: "Grid view", icon: GridViewIcon },
+];
+
+const engineName = (project: Project): string => (project.engine === "latex" ? "LaTeX" : "Typst");
 
 /** Rows beyond this index appear without a stagger delay, so long lists do not feel slow. */
 const MAX_STAGGERED_ROWS = 12;
@@ -48,6 +62,8 @@ export function DashboardPage() {
   const [storage, setStorage] = useState<StorageStatus | undefined>();
   const [filter, setFilter] = useState<EngineFilter>("all");
   const [query, setQuery] = useState("");
+  const { view, setView } = useDashboardView();
+  const sizes = useLiveQuery(() => projects.sizes(), [projects]);
 
   useEffect(() => {
     void readStorageStatus().then(setStorage);
@@ -68,6 +84,44 @@ export function DashboardPage() {
     (project) =>
       (filter === "all" || project.engine === filter) &&
       (needle === "" || project.title.toLowerCase().includes(needle)),
+  );
+  const sizeOf = (project: Project): string => {
+    const bytes = sizes?.get(project.id);
+    return bytes === undefined ? "-" : formatBytes(bytes);
+  };
+  const stagger = (index: number) => ({
+    animationDelay: `${Math.min(index, MAX_STAGGERED_ROWS) * 25}ms`,
+  });
+  const actionsFor = (project: Project): MenuAction[] => [
+    { id: "open", label: "Open", onSelect: () => navigate(`/p/${project.id}`) },
+    { id: "rename", label: "Rename", onSelect: () => setRenaming(project) },
+    {
+      id: "duplicate",
+      label: "Duplicate",
+      onSelect: async () => {
+        const result = await projects.duplicate(project);
+        if (!result.ok) toast.error(result.error.message);
+      },
+    },
+    { id: "delete", label: "Delete", destructive: true, onSelect: () => setDeleting(project) },
+  ];
+  const menuFor = (project: Project, className?: string) => (
+    <DropdownMenu
+      trigger={
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Actions for ${project.title}`}
+          className={cn(
+            "opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[popup-open]:opacity-100",
+            className,
+          )}
+        >
+          <Icon icon={MoreHorizontalIcon} />
+        </Button>
+      }
+      actions={actionsFor(project)}
+    />
   );
   const heading = FILTERS.find((item) => item.id === filter)?.label ?? "Projects";
   const usageRatio =
@@ -158,9 +212,9 @@ export function DashboardPage() {
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden py-2 pr-2">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
           <header className="flex h-16 shrink-0 items-center gap-3 border-b px-6">
-            <h1 className="truncate font-semibold text-lg tracking-tight">{heading}</h1>
+            <h1 className="shrink-0 font-semibold text-lg tracking-tight">{heading}</h1>
             <div className="flex-1" />
-            <div className="relative w-full max-w-72">
+            <div className="relative min-w-0 max-w-72 flex-1">
               <Icon
                 icon={Search01Icon}
                 size={15}
@@ -175,6 +229,25 @@ export function DashboardPage() {
                 className="rounded-full pl-9"
               />
             </div>
+            <fieldset className="flex shrink-0 items-center rounded-full bg-muted p-0.5">
+              <legend className="sr-only">Layout</legend>
+              {VIEWS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-label={item.label}
+                  aria-pressed={view === item.id}
+                  title={item.label}
+                  onClick={() => setView(item.id)}
+                  className={cn(
+                    "pressable flex size-7 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:text-foreground",
+                    view === item.id && "bg-card text-foreground shadow-xs",
+                  )}
+                >
+                  <Icon icon={item.icon} size={15} />
+                </button>
+              ))}
+            </fieldset>
             <Button onClick={() => setCreating(true)}>
               <Icon icon={Add01Icon} size={15} /> New
             </Button>
@@ -199,11 +272,47 @@ export function DashboardPage() {
               <p className="fade-in animate-in p-10 text-center text-muted-foreground">
                 No projects match your search.
               </p>
+            ) : view === "grid" ? (
+              <ul
+                key="grid"
+                className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 p-6"
+                aria-label="Projects"
+              >
+                {visible.map((project, index) => (
+                  <li
+                    key={project.id}
+                    className="group fade-in zoom-in-95 relative animate-in fill-mode-both"
+                    style={stagger(index)}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/p/${project.id}`)}
+                      className="pressable flex w-full cursor-pointer flex-col overflow-hidden rounded-lg border bg-card text-left hover:border-primary/30 hover:shadow-md"
+                    >
+                      <span className="flex aspect-[4/3] items-center justify-center bg-muted/60 text-muted-foreground transition-colors duration-200 group-hover:text-primary">
+                        <span className="flex h-20 w-16 items-center justify-center rounded-sm bg-card shadow-sm transition-transform duration-300 ease-out group-hover:-translate-y-1">
+                          <Icon icon={File01Icon} size={22} />
+                        </span>
+                      </span>
+                      <span className="flex flex-col gap-1 border-t px-3 py-2.5">
+                        <span className="truncate pr-6 font-medium">{project.title}</span>
+                        <span className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <Badge>{engineName(project)}</Badge>
+                          <span className="truncate">{formatRelative(project.updatedAt)}</span>
+                          <span className="ml-auto shrink-0 tabular-nums">{sizeOf(project)}</span>
+                        </span>
+                      </span>
+                    </button>
+                    {menuFor(project, "absolute top-2 right-2 bg-card/80 backdrop-blur-sm")}
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <>
+              <div key="list" className="@container">
                 <div className="flex h-9 items-center gap-3 px-6 text-muted-foreground text-xs">
                   <span className="flex-1">Name</span>
-                  <span className="w-28 text-right">Edited</span>
+                  <span className="w-20 text-right @max-md:hidden">Size</span>
+                  <span className="w-28 text-right @max-lg:hidden">Edited</span>
                   <span className="w-7" />
                 </div>
                 <ul className="px-3 pb-3" aria-label="Projects">
@@ -211,7 +320,7 @@ export function DashboardPage() {
                     <li
                       key={project.id}
                       className="group fade-in slide-in-from-bottom-1 flex animate-in items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150 fill-mode-both hover:bg-muted/60"
-                      style={{ animationDelay: `${Math.min(index, MAX_STAGGERED_ROWS) * 25}ms` }}
+                      style={stagger(index)}
                     >
                       <button
                         type="button"
@@ -222,49 +331,19 @@ export function DashboardPage() {
                           <Icon icon={File01Icon} size={16} />
                         </span>
                         <span className="truncate font-medium">{project.title}</span>
-                        <Badge>{project.engine === "latex" ? "LaTeX" : "Typst"}</Badge>
+                        <Badge>{engineName(project)}</Badge>
                       </button>
-                      <span className="w-28 text-right text-muted-foreground text-xs">
+                      <span className="w-20 text-right text-muted-foreground text-xs tabular-nums @max-md:hidden">
+                        {sizeOf(project)}
+                      </span>
+                      <span className="w-28 text-right text-muted-foreground text-xs @max-lg:hidden">
                         {formatRelative(project.updatedAt)}
                       </span>
-                      <DropdownMenu
-                        trigger={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Actions for ${project.title}`}
-                            className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[popup-open]:opacity-100"
-                          >
-                            <Icon icon={MoreHorizontalIcon} />
-                          </Button>
-                        }
-                        actions={[
-                          {
-                            id: "open",
-                            label: "Open",
-                            onSelect: () => navigate(`/p/${project.id}`),
-                          },
-                          { id: "rename", label: "Rename", onSelect: () => setRenaming(project) },
-                          {
-                            id: "duplicate",
-                            label: "Duplicate",
-                            onSelect: async () => {
-                              const result = await projects.duplicate(project);
-                              if (!result.ok) toast.error(result.error.message);
-                            },
-                          },
-                          {
-                            id: "delete",
-                            label: "Delete",
-                            destructive: true,
-                            onSelect: () => setDeleting(project),
-                          },
-                        ]}
-                      />
+                      {menuFor(project)}
                     </li>
                   ))}
                 </ul>
-              </>
+              </div>
             )}
           </div>
         </div>

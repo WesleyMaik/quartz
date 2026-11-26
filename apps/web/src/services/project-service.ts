@@ -37,6 +37,11 @@ export class ProjectService {
     );
   }
 
+  /** Stored bytes per project; reads only file metadata, so it is cheap to keep live. */
+  sizes() {
+    return this.projects.sizes();
+  }
+
   rename(id: ProjectId, title: string) {
     return this.projects.rename(id, title);
   }
