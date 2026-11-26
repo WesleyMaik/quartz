@@ -156,7 +156,12 @@ Quartz is in early development and the architecture is still settling. Before co
 
 ## License
 
-Quartz is dual-licensed under **MIT OR Apache-2.0**, at your option.
+Quartz is dual-licensed under either of the following, at your option:
+
+- MIT License ([LICENSE-MIT](LICENSE-MIT))
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
+
+Unless you explicitly state otherwise, any contribution you intentionally submit for inclusion in Quartz is dual-licensed as above, without any additional terms or conditions.
 
 Third-party engines keep their own licenses: TeX engine binaries are GPL and are loaded as separate programs in their own workers, typst.ts is Apache-2.0, and Siglum is MIT. See [ADR-004](docs/decisions/ADR-004-compiler-architecture.md#license-decision) for the full policy.
 
