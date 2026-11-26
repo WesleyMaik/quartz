@@ -13,7 +13,7 @@
 
 Forbidden: any Quartz-operated dynamic endpoint, analytics, error reporting services, remote compilation, remote storage.
 
-Static host requirements: HTTPS; ability to set `Cache-Control` and CORS headers; optionally `Cross-Origin-Opener-Policy`/`Cross-Origin-Embedder-Policy` (see §6). Cloudflare Pages, Netlify and most CDNs meet this; GitHub Pages cannot set headers.
+Static host requirements: HTTPS; serve `/engines/**/*.gz` as `application/octet-stream` **without** `Content-Encoding` (engines decompress them themselves); ability to set `Cache-Control` and CORS headers; optionally `Cross-Origin-Opener-Policy`/`Cross-Origin-Embedder-Policy` (see §6). Cloudflare Pages, Netlify and most CDNs meet this; GitHub Pages cannot set headers.
 
 ## 2. Composition root
 

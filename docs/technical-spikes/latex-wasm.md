@@ -60,6 +60,23 @@ Other notes:
 - **[FACT]** No candidate supports shell escape running native programs.
 - Alternative explicitly not pursued: LaTeX-to-Typst conversion (for example "Scissor LaTeX") produces approximate output and is not LaTeX compilation.
 
+## Integration results (2026-11-26, Chromium only)
+
+Siglum `@siglum/engine` 0.2.2 is integrated in `packages/compiler-latex` and verified in the app (Chromium, Windows). Safari is **pending** (no macOS available); Firefox not yet tested.
+
+- **[FACT]** Runtime release `tl2026-0cc2592f50103429`: 216.6 MB compressed archive, **302.5 MB** extracted on the host, 125 files. Checksum verified against the release `SHA256SUMS` by `pnpm --filter @qrtz/web fetch:assets`.
+- **[FACT]** The LaTeX article template (pdfLaTeX, `amsmath`, `graphicx`, `\input`, `\eqref`) compiles in about 1.2 to 1.6 s warm; the first build downloads 13 bundles (about 31 MB decompressed).
+- **[FACT]** Errors are attributed to the right file and line (`sections/introduction.tex:2` for an undefined macro) by the Quartz log parser; a failed build keeps the last PDF.
+- **[FACT]** All npm dependencies of the wrapper are MIT (`@siglum/engine`, `@siglum/filesystem`, `xzwasm`, `blake3-wasm`, `fflate`).
+
+Integration quirks that any host must respect:
+
+1. `*.data.gz` bundles must be served **without** `Content-Encoding: gzip`. Otherwise the browser decompresses them and Siglum decompresses again, corrupting the TeX format (`Could not undump ... pdflatex.fmt`). The Vite dev/preview server strips the header in `apps/web/vite.config.ts`; production hosts need the same rule.
+2. Siglum maps missing files to bundles (for example `epstopdf-base.sty`, loaded indirectly by `graphicx`) only in its CTAN retry loop. `OfflineSiglumCompiler` enables that loop and answers every proxy request locally as unavailable, so no request leaves the Quartz origin. This couples Quartz to 0.2.2 internals; re-check on upgrade.
+3. `blake3-wasm`'s browser build is broken for bundlers; it is aliased to a stub and Siglum falls back to DJB2 hashing (change detection only).
+4. Siglum caches bundles in OPFS and Cache Storage (`siglum-files`, `bundle-cache`, `siglum-wasm-*`). These are re-downloadable caches, not project data, consistent with ADR-002.
+5. Siglum exposes `syncTexData` in compile results, which makes Phase 6 source/PDF navigation feasible.
+
 ## Technical risks
 
 | Risk | Impact | Mitigation |
