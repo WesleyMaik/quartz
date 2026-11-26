@@ -1,0 +1,23 @@
+{
+  "name": "@qrtz/compiler-latex",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@qrtz/compiler-core": "workspace:*",
+    "@siglum/engine": "0.2.2"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "8.4.0",
+    "vitest": "catalog:"
+  }
+}
