@@ -2,6 +2,7 @@ import * as Comlink from "comlink";
 import type {
   CompilationProject,
   CompilationResult,
+  CompileEngine,
   EngineId,
   EngineWorkerApi,
   HostResult,
@@ -27,7 +28,7 @@ class CompileTimeoutError extends Error {
  * Owns one engine worker. Starts it lazily, restarts it after crashes, and terminates it to
  * cancel or time out a compile, because synchronous WASM runs cannot be interrupted otherwise.
  */
-export class EngineHost {
+export class EngineHost implements CompileEngine {
   private worker: Worker | undefined;
   private api: Comlink.Remote<EngineWorkerApi> | undefined;
   private ready: Promise<void> | undefined;

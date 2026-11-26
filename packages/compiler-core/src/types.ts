@@ -62,6 +62,18 @@ export type CompileStatus =
   | "error"
   | "cancelled";
 
+/**
+ * What the app needs from any engine. `EngineHost` implements it for Quartz-owned workers;
+ * adapters around engines that manage their own worker (Siglum) implement it directly.
+ */
+export interface CompileEngine {
+  readonly engine: EngineId;
+  compile(project: CompilationProject): Promise<HostResult>;
+  /** Stops the running compile; the next compile restarts the engine if needed. */
+  cancel(): void;
+  dispose(): void;
+}
+
 export type HostResult =
   | (CompilationResult & { readonly snapshotKey: string })
   | { readonly status: "cancelled"; readonly snapshotKey: string; readonly durationMs: number };
