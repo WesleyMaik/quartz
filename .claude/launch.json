@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@qrtz/web", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "web-pages-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@qrtz/web",
+        "exec",
+        "vite",
+        "preview",
+        "--base",
+        "/quartz/",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "port": 4173,
+      "url": "http://localhost:4173"
+    }
+  ]
+}
