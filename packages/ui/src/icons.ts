@@ -19,6 +19,7 @@ export {
   Folder01Icon,
   FolderAddIcon,
   FolderOpenIcon,
+  FolderUploadIcon,
   GridViewIcon,
   LayoutAlignLeftIcon,
   LayoutAlignRightIcon,
