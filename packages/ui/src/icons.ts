@@ -19,6 +19,8 @@ export {
   Folder01Icon,
   FolderAddIcon,
   FolderOpenIcon,
+  GridViewIcon,
+  ListViewIcon,
   Loading03Icon,
   MinusSignIcon,
   Moon02Icon,
