@@ -1,3 +1,4 @@
+export type { EditorState } from "@codemirror/state";
 export {
   type CreateEditorStateOptions,
   createEditorState,
