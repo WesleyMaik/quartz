@@ -1,0 +1,25 @@
+{
+  "name": "@qrtz/compiler-typst",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@myriaddreamin/typst-ts-web-compiler": "0.7.0",
+    "@myriaddreamin/typst.ts": "0.7.0",
+    "@qrtz/compiler-core": "workspace:*",
+    "comlink": "4.4.2"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "8.4.0",
+    "vitest": "catalog:"
+  }
+}
