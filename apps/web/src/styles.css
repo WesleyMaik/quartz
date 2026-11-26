@@ -1,0 +1,15 @@
+@import "@qrtz/ui/styles.css";
+@import "pdfjs-dist/web/pdf_viewer.css";
+
+/* PDF.js viewer inside the preview panel. */
+.quartz-pdf-container {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: var(--muted);
+}
+.quartz-pdf-container .pdfViewer .page {
+  margin: 12px auto;
+  border: none;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+}
