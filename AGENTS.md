@@ -99,17 +99,20 @@ Rules:
 - Group files of the same scope into the same commit; keep each commit cohesive and split by scope.
 - Never commit secrets, build output or downloaded engine assets.
 
-## Commands (planned; T-1.4.5 replaces with verified commands)
+## Commands (verified)
 
 ```
 pnpm install
-pnpm dev                     # turbo run dev --filter @qrtz/web
-pnpm biome check .
-pnpm turbo typecheck
-pnpm turbo test
-pnpm turbo build
-pnpm --filter @qrtz/e2e exec playwright test
+pnpm --filter @qrtz/web fetch:assets   # one-time: Typst fonts + Siglum TeX Live runtime (~217 MB download, checksum-verified)
+pnpm dev                               # http://localhost:5173
+pnpm lint                              # biome check .
+pnpm format                            # biome check --write .
+pnpm typecheck
+pnpm test
+pnpm build
 ```
+
+Runtime assets live in `apps/web/public/engines/` (gitignored). Playwright E2E is planned and not set up yet.
 
 ## Important technical decisions
 
