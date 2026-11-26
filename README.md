@@ -34,43 +34,43 @@ Quartz takes the opposite approach:
 
 - **Your documents stay on your device.** Projects are stored in your browser. Nothing is uploaded, and there is no account to create.
 - **Compilation happens locally.** LaTeX and Typst compile to PDF with WebAssembly, in Web Workers, inside your browser tab. There is no hidden remote compiler.
-- **Your AI, your choice.** Quartz does not ship a model or ask for API keys. It exposes its project operations as browser tools through [WebMCP](https://developer.chrome.com/docs/ai/webmcp/), so the agent you already use can read, edit, review and compile your documents, and you approve every change. *(Planned, see the [roadmap](docs/roadmap/implementation-plan.md).)*
-- **Your files stay portable.** Original `.tex`, `.typ` and `.bib` files are never rewritten or hidden. A `.qrtz` project file is a plain ZIP you can open with any tool. *(Planned.)*
+- **Your AI, your choice.** Quartz does not ship a model or ask for API keys. It exposes its project operations as browser tools through [WebMCP](https://developer.chrome.com/docs/ai/webmcp/), so the agent you already use can read, edit, review and compile your documents, and you approve every change. _(Planned, see the [roadmap](docs/roadmap/implementation-plan.md).)_
+- **Your files stay portable.** Original `.tex`, `.typ` and `.bib` files are never rewritten or hidden. A `.qrtz` project file is a plain ZIP you can open with any tool. _(Planned.)_
 - **Static hosting only.** The whole application is static files: any static host can serve it, and it keeps working offline once the engines are cached.
 
 ## Features
 
-| Area | Status |
-|---|---|
-| Project dashboard: create from templates, rename, duplicate, delete | ✅ |
-| File explorer with folders, upload, rename, delete, main document selection | ✅ |
-| CodeMirror 6 editor with LaTeX and Typst highlighting, tabs, search, autocompletion | ✅ |
-| Autosave to IndexedDB with recovery after reload | ✅ |
-| Typst compilation in a Web Worker with live preview | ✅ |
-| LaTeX compilation (pdfLaTeX, XeLaTeX, BibTeX) with a self-hosted TeX Live 2026 runtime | ✅ |
-| Diagnostics mapped to file and line, compile log, last successful PDF preserved | ✅ |
-| PDF preview with zoom, page navigation, text selection and download | ✅ |
-| Light and dark themes | ✅ |
-| `.qrtz` import and export, ZIP and single-file import | 🚧 Planned |
-| WebMCP agent tools with staged change review and undo | 🚧 Planned |
-| Offline PWA, command palette, bibliography tools, SyncTeX navigation | 🚧 Planned |
+| Area                                                                                   | Status     |
+| -------------------------------------------------------------------------------------- | ---------- |
+| Project dashboard: create from templates, rename, duplicate, delete                    | ✅         |
+| File explorer with folders, upload, rename, delete, main document selection            | ✅         |
+| CodeMirror 6 editor with LaTeX and Typst highlighting, tabs, search, autocompletion    | ✅         |
+| Autosave to IndexedDB with recovery after reload                                       | ✅         |
+| Typst compilation in a Web Worker with live preview                                    | ✅         |
+| LaTeX compilation (pdfLaTeX, XeLaTeX, BibTeX) with a self-hosted TeX Live 2026 runtime | ✅         |
+| Diagnostics mapped to file and line, compile log, last successful PDF preserved        | ✅         |
+| PDF preview with zoom, page navigation, text selection and download                    | ✅         |
+| Light and dark themes                                                                  | ✅         |
+| `.qrtz` import and export, ZIP and single-file import                                  | 🚧 Planned |
+| WebMCP agent tools with staged change review and undo                                  | 🚧 Planned |
+| Offline PWA, command palette, bibliography tools, SyncTeX navigation                   | 🚧 Planned |
 
 Browser support: verified in Chromium. Firefox and Safari are not verified yet.
 
 ## Tech stack
 
-| Concern | Technology |
-|---|---|
-| UI | [React 19](https://react.dev), [Tailwind CSS 4](https://tailwindcss.com), [Base UI](https://base-ui.com) primitives in the shadcn/ui style, [HugeIcons](https://hugeicons.com) |
-| Language and build | [TypeScript](https://www.typescriptlang.org) (strict), [Vite 8](https://vite.dev) |
-| Monorepo | [pnpm workspaces](https://pnpm.io/workspaces), [Turborepo](https://turborepo.com) |
-| Editor | [CodeMirror 6](https://codemirror.net) |
-| PDF | [PDF.js](https://mozilla.github.io/pdf.js/) |
-| Storage | IndexedDB through [Dexie](https://dexie.org) |
-| LaTeX engine | [Siglum](https://github.com/SiglumProject/siglum) (BusyTeX, TeX Live 2026, WebAssembly) |
-| Typst engine | [typst.ts](https://github.com/Myriad-Dreamin/typst.ts) (WebAssembly) |
-| Worker RPC | [Comlink](https://github.com/GoogleChromeLabs/comlink) |
-| Quality | [Biome](https://biomejs.dev) for lint and format, [Vitest](https://vitest.dev) for tests |
+| Concern            | Technology                                                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| UI                 | [React 19](https://react.dev), [Tailwind CSS 4](https://tailwindcss.com), [Base UI](https://base-ui.com) primitives in the shadcn/ui style, [HugeIcons](https://hugeicons.com) |
+| Language and build | [TypeScript](https://www.typescriptlang.org) (strict), [Vite 8](https://vite.dev)                                                                                              |
+| Monorepo           | [pnpm workspaces](https://pnpm.io/workspaces), [Turborepo](https://turborepo.com)                                                                                              |
+| Editor             | [CodeMirror 6](https://codemirror.net)                                                                                                                                         |
+| PDF                | [PDF.js](https://mozilla.github.io/pdf.js/)                                                                                                                                    |
+| Storage            | IndexedDB through [Dexie](https://dexie.org)                                                                                                                                   |
+| LaTeX engine       | [Siglum](https://github.com/SiglumProject/siglum) (BusyTeX, TeX Live 2026, WebAssembly)                                                                                        |
+| Typst engine       | [typst.ts](https://github.com/Myriad-Dreamin/typst.ts) (WebAssembly)                                                                                                           |
+| Worker RPC         | [Comlink](https://github.com/GoogleChromeLabs/comlink)                                                                                                                         |
+| Quality            | [Biome](https://biomejs.dev) for lint and format, [Vitest](https://vitest.dev) for tests                                                                                       |
 
 ## Getting started
 
@@ -101,16 +101,16 @@ The runtime assets are stored in `apps/web/public/engines/`, which is ignored by
 
 ### Scripts
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Start the web app in development mode |
-| `pnpm build` | Build every package and the production web app |
-| `pnpm typecheck` | Type-check every package |
-| `pnpm test` | Run unit tests with Vitest |
-| `pnpm lint` | Lint and check formatting with Biome |
-| `pnpm format` | Apply Biome formatting and safe fixes |
-| `pnpm --filter @qrtz/web fetch:assets` | Download the engine runtime assets |
-| `pnpm --filter @qrtz/web preview` | Serve the production build locally |
+| Command                                | Description                                    |
+| -------------------------------------- | ---------------------------------------------- |
+| `pnpm dev`                             | Start the web app in development mode          |
+| `pnpm build`                           | Build every package and the production web app |
+| `pnpm typecheck`                       | Type-check every package                       |
+| `pnpm test`                            | Run unit tests with Vitest                     |
+| `pnpm lint`                            | Lint and check formatting with Biome           |
+| `pnpm format`                          | Apply Biome formatting and safe fixes          |
+| `pnpm --filter @qrtz/web fetch:assets` | Download the engine runtime assets             |
+| `pnpm --filter @qrtz/web preview`      | Serve the production build locally             |
 
 ## Project structure
 
@@ -132,10 +132,28 @@ quartz/
 
 ## Deployment
 
-`pnpm build` produces static files in `apps/web/dist`. Deploy them together with `apps/web/public/engines/` to any static host that supports HTTPS. Two host settings matter:
+Quartz builds to static files: no Node.js server is involved at runtime. After `fetch:assets`, `pnpm build` writes the app and the engine runtime (copied from `apps/web/public/engines/`) to `apps/web/dist`, about 330 MB in total.
+
+To host under a sub-path, set `QUARTZ_BASE` at build time:
+
+```bash
+QUARTZ_BASE=/quartz/ pnpm --filter @qrtz/web build
+```
+
+Any static host works if it respects two rules:
 
 - Serve `/engines/**/*.gz` as `application/octet-stream` **without** a `Content-Encoding` header. The engines decompress these files themselves; a transport encoding header makes the browser decompress them first and corrupts them.
-- Rewrite unknown paths to `index.html` so that project URLs such as `/p/<id>` load the app.
+- Serve `index.html` for unknown paths so that project URLs such as `/p/<id>` load the app.
+
+### GitHub Pages
+
+The [`Deploy to GitHub Pages`](.github/workflows/deploy-pages.yml) workflow runs on every push to `main`. It checks, builds with the right base path, adds a `404.html` SPA fallback and deploys. A final step checks the engine bundle headers on the live site and fails if GitHub Pages adds `Content-Encoding`.
+
+To enable it, open **Settings → Pages** and set **Source** to **GitHub Actions**. GitHub Pages for private repositories requires a paid GitHub plan.
+
+### Cloudflare Pages
+
+Cloudflare Pages limits single files to 25 MiB, and three engine files are larger (the Typst and LaTeX WebAssembly binaries and the `cm-super` font bundle). Host `engines/` on Cloudflare R2 or another object store, and serve the app from Pages.
 
 ## Your data
 
