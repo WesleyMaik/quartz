@@ -1,9 +1,9 @@
 import {
   type CompilationFile,
+  type CompileEngine,
   CompileQueue,
   type CompilerDiagnostic,
   type CompileStatus,
-  type EngineHost,
   type EngineId,
   type HostResult,
 } from "@qrtz/compiler-core";
@@ -41,7 +41,7 @@ const assetBase = (engine: EngineId): string =>
 async function loadEngine(
   engine: EngineId,
   onMessage: (message: string) => void,
-): Promise<EngineHost> {
+): Promise<CompileEngine> {
   switch (engine) {
     case "typst": {
       const { createTypstEngine } = await import("@qrtz/compiler-typst");
@@ -50,10 +50,18 @@ async function loadEngine(
         onProgress: (p) => onMessage(p.message),
       });
     }
-    case "latex":
-      throw new Error("The LaTeX engine is not available yet.");
+    case "latex": {
+      const { createLatexEngine } = await import("@qrtz/compiler-latex");
+      return createLatexEngine({
+        assetBaseUrl: assetBase("latex"),
+        onProgress: (p) => onMessage(p.message),
+      });
+    }
   }
 }
+
+const compileOptions = (project: Project): Readonly<Record<string, string>> =>
+  project.compiler.engine === "latex" ? { variant: project.compiler.variant } : {};
 
 async function toCompilationFiles(snapshot: readonly SnapshotFile[]): Promise<CompilationFile[]> {
   return Promise.all(
@@ -81,7 +89,7 @@ const snapshotKeyOf = (snapshot: readonly SnapshotFile[], entry: string): string
  * initial bundle). Keeps the last successful PDF when a build fails.
  */
 export class CompileService {
-  private readonly engines = new Map<EngineId, Promise<EngineHost>>();
+  private readonly engines = new Map<EngineId, Promise<CompileEngine>>();
   private readonly queues = new Map<ProjectId, CompileQueue<HostResult>>();
   private readonly states = new Map<ProjectId, CompileState>();
   private readonly listeners = new Set<Listener>();
@@ -100,7 +108,7 @@ export class CompileService {
     for (const listener of this.listeners) listener();
   }
 
-  private engine(engine: EngineId, projectId: ProjectId): Promise<EngineHost> {
+  private engine(engine: EngineId, projectId: ProjectId): Promise<CompileEngine> {
     let host = this.engines.get(engine);
     if (host === undefined) {
       host = loadEngine(engine, (message) => this.update(projectId, { message }));
@@ -131,6 +139,7 @@ export class CompileService {
           entry: project.entry,
           files: await toCompilationFiles(snapshot),
           snapshotKey: snapshotKeyOf(snapshot, project.entry),
+          options: compileOptions(project),
         });
       });
       this.publish(project.id, result);
