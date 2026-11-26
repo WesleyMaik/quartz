@@ -37,6 +37,7 @@ const TYPST_MAIN = `#set document(title: "A Quartz Article")
 #set page(paper: "a4", margin: 2.5cm, numbering: "1")
 #set text(size: 11pt)
 #set heading(numbering: "1.")
+#set math.equation(numbering: "(1)")
 
 #align(center)[
   #text(18pt, weight: "bold")[A Quartz Article]
