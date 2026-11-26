@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+*.log
+.vite/
+playwright-report/
+test-results/
+apps/web/public/engines/
