@@ -20,7 +20,8 @@
     "clsx": "2.1.1",
     "react-resizable-panels": "4.24.3",
     "sonner": "2.0.8",
-    "tailwind-merge": "3.7.1"
+    "tailwind-merge": "3.7.1",
+    "tailwindcss-animate": "1.0.7"
   },
   "peerDependencies": {
     "react": "catalog:",
@@ -31,6 +32,7 @@
     "@types/react-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "tailwindcss": "4.3.5",
     "typescript": "catalog:"
   }
 }

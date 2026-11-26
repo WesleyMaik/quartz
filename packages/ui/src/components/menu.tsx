@@ -12,15 +12,18 @@ export interface MenuAction {
 }
 
 const popupClass =
-  "min-w-44 rounded-md border bg-background p-1 shadow-lg outline-none transition-opacity data-[ending-style]:opacity-0 data-[starting-style]:opacity-0";
+  "min-w-44 origin-[var(--transform-origin)] rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg outline-none transition-[scale,opacity] duration-150 ease-out data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0";
 const itemClass =
-  "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-muted data-[disabled]:opacity-50";
+  "flex cursor-default select-none items-center rounded-md px-2.5 py-1.5 text-[13px] outline-none data-[disabled]:opacity-50 data-[highlighted]:bg-muted";
 
 function Items({ actions }: { readonly actions: readonly MenuAction[] }) {
   return actions.map((action) => (
     <BaseMenu.Item
       key={action.id}
-      className={cn(itemClass, action.destructive === true && "text-destructive")}
+      className={cn(
+        itemClass,
+        action.destructive === true && "text-destructive data-[highlighted]:bg-destructive/10",
+      )}
       onClick={action.onSelect}
       disabled={action.disabled ?? false}
     >
@@ -68,7 +71,11 @@ export function ContextMenu({
             {actions.map((action) => (
               <BaseContextMenu.Item
                 key={action.id}
-                className={cn(itemClass, action.destructive === true && "text-destructive")}
+                className={cn(
+                  itemClass,
+                  action.destructive === true &&
+                    "text-destructive data-[highlighted]:bg-destructive/10",
+                )}
                 onClick={action.onSelect}
                 disabled={action.disabled ?? false}
               >

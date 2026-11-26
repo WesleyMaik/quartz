@@ -8,10 +8,15 @@ export const ResizableGroup = ({ className, ...props }: ComponentProps<typeof Gr
 
 export const ResizablePanel = Panel;
 
+/** Transparent gutter between floating panels; a pill grip appears on hover and while dragging. */
 export const ResizableHandle = ({ className, ...props }: ComponentProps<typeof Separator>) => (
   <Separator
     className={cn(
-      "relative w-px bg-border transition-colors after:absolute after:inset-y-0 after:-left-1 after:w-2 data-[separator=active]:bg-primary data-[separator=hover]:bg-primary/60",
+      "group relative flex w-2 items-center justify-center outline-none",
+      "after:h-8 after:w-1 after:rounded-full after:bg-transparent after:transition-[background-color,height] after:duration-200 after:ease-out",
+      "data-[separator=hover]:after:h-12 data-[separator=hover]:after:bg-primary/50",
+      "data-[separator=active]:after:h-16 data-[separator=active]:after:bg-primary",
+      "focus-visible:after:bg-ring",
       className,
     )}
     {...props}
