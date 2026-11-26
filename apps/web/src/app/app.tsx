@@ -2,6 +2,7 @@ import { Toaster } from "@qrtz/ui";
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { DashboardPage } from "../features/dashboard/dashboard-page";
+import { ProjectLoadingScreen } from "../features/shared/project-loading-screen";
 import { type Services, ServicesProvider } from "./services";
 
 // The workspace pulls in CodeMirror and PDF.js; load it only when a project opens.
@@ -17,7 +18,7 @@ const router = createBrowserRouter(
     {
       path: "/p/:projectId",
       element: (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ProjectLoadingScreen />}>
           <WorkspacePage />
         </Suspense>
       ),

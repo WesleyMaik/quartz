@@ -11,6 +11,7 @@ import { MOBILE_QUERY, useMediaQuery } from "../../app/use-media-query";
 import { useSidebar } from "../../app/use-sidebar";
 import { formatTime } from "../../lib/format";
 import { PdfPreview } from "../preview/pdf-preview";
+import { ProjectLoadingScreen } from "../shared/project-loading-screen";
 import { EditorPane, type EditorPaneHandle } from "./editor-pane";
 import { FileExplorer } from "./file-explorer";
 import { ProblemsPanel } from "./problems-panel";
@@ -35,7 +36,7 @@ export function WorkspacePage() {
     [db, projectId],
   );
 
-  if (project === undefined) return null;
+  if (project === undefined) return <ProjectLoadingScreen />;
   if (project === null) {
     return (
       <div className="fade-in flex h-full animate-in flex-col items-center justify-center gap-2">
@@ -67,6 +68,8 @@ function Workspace({ project }: { readonly project: Project }) {
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const [mobileTab, setMobileTab] = useState<MobileTab>("editor");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loaderVisible, setLoaderVisible] = useState(true);
+  const hideLoader = useCallback(() => setLoaderVisible(false), []);
   const sidebar = useSidebar("quartz:workspace-sidebar");
   const autoTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const projectRef = useRef(project);
@@ -406,6 +409,9 @@ function Workspace({ project }: { readonly project: Project }) {
           </ResizableGroup>
         </div>
       )}
+      {loaderVisible ? (
+        <ProjectLoadingScreen ready={entries !== undefined && restored} onFinished={hideLoader} />
+      ) : null}
     </div>
   );
 }
