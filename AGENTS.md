@@ -103,7 +103,7 @@ Rules:
 
 ```
 pnpm install
-pnpm --filter @qrtz/web fetch:assets   # one-time: Typst fonts + Siglum TeX Live runtime (~217 MB download, checksum-verified)
+pnpm --filter @qrtz/web fetch:assets   # one-time: Typst fonts + Siglum TeX Live runtime + extra LaTeX packages (~218 MB download, checksum-verified)
 pnpm dev                               # http://localhost:5173
 pnpm lint                              # biome check .
 pnpm format                            # biome check --write .
