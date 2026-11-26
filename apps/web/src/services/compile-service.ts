@@ -36,7 +36,7 @@ const INITIAL: CompileState = {
 type Listener = () => void;
 
 const assetBase = (engine: EngineId): string =>
-  new URL(`/engines/${engine}/`, window.location.origin).href;
+  new URL(`${import.meta.env.BASE_URL}engines/${engine}/`, window.location.origin).href;
 
 async function loadEngine(
   engine: EngineId,

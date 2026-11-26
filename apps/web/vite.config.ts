@@ -10,9 +10,11 @@ import { defineConfig, type Plugin } from "vite";
  * and corrupts the data. Production hosts need the same rule (see docs/architecture/client-side-architecture.md).
  */
 function rawEngineAssets(): Plugin {
+  let prefix = "/engines/";
   const strip = (url: string | undefined, res: ServerResponse) => {
-    if (url === undefined || !url.startsWith("/engines/") || !url.split("?")[0]?.endsWith(".gz"))
+    if (url === undefined || !url.startsWith(prefix) || !url.split("?")[0]?.endsWith(".gz")) {
       return;
+    }
     const setHeader = res.setHeader.bind(res);
     res.setHeader = (name, value) =>
       name.toLowerCase() === "content-encoding" ? res : setHeader(name, value);
@@ -20,6 +22,9 @@ function rawEngineAssets(): Plugin {
   };
   return {
     name: "quartz-raw-engine-assets",
+    configResolved(config) {
+      prefix = `${config.base}engines/`;
+    },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         strip(req.url, res);
@@ -35,7 +40,12 @@ function rawEngineAssets(): Plugin {
   };
 }
 
+/** Public base path, e.g. "/quartz/" for a GitHub Pages project site. Defaults to the domain root. */
+const rawBase = process.env.QUARTZ_BASE ?? "/";
+const base = `/${rawBase.replace(/^\/+|\/+$/g, "")}/`.replace(/\/+/g, "/");
+
 export default defineConfig({
+  base,
   plugins: [rawEngineAssets(), react(), tailwindcss()],
   resolve: {
     alias: {

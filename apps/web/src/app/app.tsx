@@ -11,17 +11,21 @@ const WorkspacePage = lazy(() =>
   })),
 );
 
-const router = createBrowserRouter([
-  { path: "/", element: <DashboardPage /> },
-  {
-    path: "/p/:projectId",
-    element: (
-      <Suspense fallback={null}>
-        <WorkspacePage />
-      </Suspense>
-    ),
-  },
-]);
+const router = createBrowserRouter(
+  [
+    { path: "/", element: <DashboardPage /> },
+    {
+      path: "/p/:projectId",
+      element: (
+        <Suspense fallback={null}>
+          <WorkspacePage />
+        </Suspense>
+      ),
+    },
+  ],
+  // Supports hosting under a sub-path such as https://user.github.io/quartz/.
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" },
+);
 
 export function App({ services }: { services: Services }) {
   return (
