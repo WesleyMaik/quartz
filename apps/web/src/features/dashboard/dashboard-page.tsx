@@ -23,10 +23,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useServices } from "../../app/services";
 import { useTheme } from "../../app/theme";
+import { useSidebar } from "../../app/use-sidebar";
 import { formatBytes, formatRelative } from "../../lib/format";
 import { ConfirmDialog } from "../shared/confirm-dialog";
 import { PromptDialog } from "../shared/prompt-dialog";
 import { QuartzLogo } from "../shared/quartz-logo";
+import { SidebarToggle } from "../shared/sidebar-toggle";
 import { NewProjectDialog } from "./new-project-dialog";
 import { type DashboardView, useDashboardView } from "./use-dashboard-view";
 
@@ -64,6 +66,7 @@ export function DashboardPage() {
   const [filter, setFilter] = useState<EngineFilter>("all");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const sidebar = useSidebar("quartz:dashboard-sidebar");
   const { view, setView } = useDashboardView();
   const sizes = useLiveQuery(() => projects.sizes(), [projects]);
 
@@ -133,85 +136,106 @@ export function DashboardPage() {
 
   return (
     <div className="flex h-full bg-background">
-      <aside className="flex w-60 shrink-0 flex-col gap-6 px-3 py-4 max-md:hidden">
-        <div className="flex items-center justify-between pl-2">
-          <div className="group flex items-center gap-2 font-semibold tracking-tight">
-            <QuartzLogo
-              size={28}
-              className="transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110"
-            />
-            Quartz
+      <aside
+        className={cn(
+          "shrink-0 overflow-hidden transition-[width] duration-300 ease-out max-md:hidden",
+          sidebar.collapsed ? "w-0" : "w-60",
+        )}
+        inert={sidebar.collapsed}
+      >
+        <div
+          className={cn(
+            "flex h-full w-60 flex-col gap-6 px-3 py-4 transition-[opacity,translate] duration-300 ease-out",
+            sidebar.collapsed && "-translate-x-6 opacity-0",
+          )}
+        >
+          <div className="flex items-center justify-between pl-2">
+            <div className="group flex items-center gap-2 font-semibold tracking-tight">
+              <QuartzLogo
+                size={28}
+                className="transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110"
+              />
+              Quartz
+            </div>
+            <div className="flex items-center">
+              <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
+                <Icon
+                  key={theme}
+                  icon={theme === "dark" ? Sun03Icon : Moon02Icon}
+                  className="fade-in spin-in-45 animate-in duration-300"
+                />
+              </Button>
+              <SidebarToggle collapsed={false} onToggle={sidebar.toggle} />
+            </div>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
-            <Icon
-              key={theme}
-              icon={theme === "dark" ? Sun03Icon : Moon02Icon}
-              className="fade-in spin-in-45 animate-in duration-300"
-            />
-          </Button>
-        </div>
 
-        <nav aria-label="Project filters" className="flex flex-col gap-0.5">
-          {FILTERS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              aria-current={filter === item.id ? "page" : undefined}
-              onClick={() => setFilter(item.id)}
-              className={cn(
-                "pressable flex h-9 cursor-pointer items-center gap-2.5 rounded-md px-3 text-left text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                filter === item.id && "bg-muted font-medium text-foreground",
-              )}
-            >
-              <Icon icon={item.id === "all" ? Folder01Icon : File01Icon} size={15} />
-              {item.label}
-              {list === undefined ? null : (
-                <span className="ml-auto text-muted-foreground text-xs tabular-nums">
-                  {item.id === "all"
-                    ? list.length
-                    : list.filter((project) => project.engine === item.id).length}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-auto rounded-lg border bg-card p-3 text-muted-foreground text-xs shadow-xs">
-          {storage?.usageBytes === undefined ? (
-            <p>Storage usage unavailable</p>
-          ) : (
-            <>
-              <p
+          <nav aria-label="Project filters" className="flex flex-col gap-0.5">
+            {FILTERS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-current={filter === item.id ? "page" : undefined}
+                onClick={() => setFilter(item.id)}
                 className={cn(
-                  "font-medium text-foreground",
-                  isNearQuota(storage) && "text-warning",
+                  "pressable flex h-9 cursor-pointer items-center gap-2.5 rounded-md px-3 text-left text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                  filter === item.id && "bg-muted font-medium text-foreground",
                 )}
               >
-                {formatBytes(storage.usageBytes)} used
-                {storage.quotaBytes === undefined ? "" : ` of ${formatBytes(storage.quotaBytes)}`}
-              </p>
-              {usageRatio === undefined ? null : (
-                <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={cn(
-                      "h-full min-w-1 rounded-full transition-[width] duration-500 ease-out",
-                      isNearQuota(storage) ? "bg-warning" : "bg-primary",
-                    )}
-                    style={{ width: `${usageRatio * 100}%` }}
-                  />
-                </div>
-              )}
-            </>
-          )}
-          <p className="mt-2 leading-relaxed">
-            {storage?.persisted === true
-              ? "Persistent storage granted. Nothing leaves your device."
-              : "Storage may be cleared by the browser. Clearing site data deletes projects."}
-          </p>
+                <Icon icon={item.id === "all" ? Folder01Icon : File01Icon} size={15} />
+                {item.label}
+                {list === undefined ? null : (
+                  <span className="ml-auto text-muted-foreground text-xs tabular-nums">
+                    {item.id === "all"
+                      ? list.length
+                      : list.filter((project) => project.engine === item.id).length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          <div className="mt-auto rounded-lg border bg-card p-3 text-muted-foreground text-xs shadow-xs">
+            {storage?.usageBytes === undefined ? (
+              <p>Storage usage unavailable</p>
+            ) : (
+              <>
+                <p
+                  className={cn(
+                    "font-medium text-foreground",
+                    isNearQuota(storage) && "text-warning",
+                  )}
+                >
+                  {formatBytes(storage.usageBytes)} used
+                  {storage.quotaBytes === undefined ? "" : ` of ${formatBytes(storage.quotaBytes)}`}
+                </p>
+                {usageRatio === undefined ? null : (
+                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={cn(
+                        "h-full min-w-1 rounded-full transition-[width] duration-500 ease-out",
+                        isNearQuota(storage) ? "bg-warning" : "bg-primary",
+                      )}
+                      style={{ width: `${usageRatio * 100}%` }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            <p className="mt-2 leading-relaxed">
+              {storage?.persisted === true
+                ? "Persistent storage granted. Nothing leaves your device."
+                : "Storage may be cleared by the browser. Clearing site data deletes projects."}
+            </p>
+          </div>
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden md:py-2 md:pr-2">
+      <main
+        className={cn(
+          "flex min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-out md:py-2 md:pr-2",
+          sidebar.collapsed && "md:pl-2",
+        )}
+      >
         <div className="flex h-14 shrink-0 items-center justify-between border-b px-4 md:hidden">
           <div className="flex items-center gap-2 font-semibold tracking-tight">
             <QuartzLogo size={26} />
@@ -227,6 +251,12 @@ export function DashboardPage() {
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-card md:rounded-xl md:border md:shadow-sm">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 md:h-16 md:gap-3 md:px-6">
+            {sidebar.collapsed ? (
+              <div className="fade-in slide-in-from-left-2 -ml-2 flex animate-in items-center gap-1 duration-300 max-md:hidden">
+                <SidebarToggle collapsed onToggle={sidebar.toggle} />
+                <QuartzLogo size={24} className="mr-1" />
+              </div>
+            ) : null}
             <h1 className="shrink-0 font-semibold text-lg tracking-tight max-md:hidden">
               {heading}
             </h1>

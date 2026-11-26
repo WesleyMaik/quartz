@@ -8,6 +8,7 @@ import { Link, useParams } from "react-router";
 import { useServices } from "../../app/services";
 import { useDocumentTitle } from "../../app/use-document-title";
 import { MOBILE_QUERY, useMediaQuery } from "../../app/use-media-query";
+import { useSidebar } from "../../app/use-sidebar";
 import { formatTime } from "../../lib/format";
 import { PdfPreview } from "../preview/pdf-preview";
 import { EditorPane, type EditorPaneHandle } from "./editor-pane";
@@ -66,6 +67,7 @@ function Workspace({ project }: { readonly project: Project }) {
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const [mobileTab, setMobileTab] = useState<MobileTab>("editor");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const sidebar = useSidebar("quartz:workspace-sidebar");
   const autoTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const projectRef = useRef(project);
   projectRef.current = project;
@@ -240,6 +242,7 @@ function Workspace({ project }: { readonly project: Project }) {
         onToggleAutoCompile={() => setAutoCompile((value) => !value)}
         onCompile={() => void compileNow()}
         onCancel={() => compiler.cancel(project)}
+        sidebar={isMobile ? undefined : { collapsed: sidebar.collapsed, onToggle: sidebar.toggle }}
       />
       {isMobile ? (
         <div className="flex min-h-0 flex-1 flex-col">
@@ -327,13 +330,25 @@ function Workspace({ project }: { readonly project: Project }) {
           </Sheet>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 pr-2 pb-2">
-          <ResizableGroup orientation="horizontal" id="quartz-workspace">
-            <ResizablePanel id="explorer" defaultSize="18%" minSize="160px" collapsible>
+        <div className="flex min-h-0 flex-1 pr-2 pb-2">
+          <div
+            className={cn(
+              "shrink-0 overflow-hidden transition-[width] duration-300 ease-out",
+              sidebar.collapsed ? "w-2" : "w-60",
+            )}
+            inert={sidebar.collapsed}
+          >
+            <div
+              className={cn(
+                "h-full w-58 transition-[opacity,translate] duration-300 ease-out",
+                sidebar.collapsed && "-translate-x-6 opacity-0",
+              )}
+            >
               {explorer(open)}
-            </ResizablePanel>
-            <ResizableHandle />
-            <ResizablePanel id="editor" defaultSize="41%" minSize="25%">
+            </div>
+          </div>
+          <ResizableGroup orientation="horizontal" id="quartz-workspace-main" className="min-w-0">
+            <ResizablePanel id="editor" defaultSize="50%" minSize="25%">
               <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div
                   className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b px-2"
@@ -383,7 +398,7 @@ function Workspace({ project }: { readonly project: Project }) {
               </div>
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel id="preview" defaultSize="41%" minSize="20%">
+            <ResizablePanel id="preview" defaultSize="50%" minSize="20%">
               <div className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
                 {preview}
               </div>

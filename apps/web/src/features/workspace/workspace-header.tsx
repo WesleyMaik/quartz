@@ -15,6 +15,7 @@ import { useTheme } from "../../app/theme";
 import { formatTime } from "../../lib/format";
 import type { CompileState } from "../../services/compile-service";
 import { QuartzLogo } from "../shared/quartz-logo";
+import { SidebarToggle } from "../shared/sidebar-toggle";
 
 export type SaveStatus = "saved" | "unsaved" | "saving";
 
@@ -66,6 +67,7 @@ export function WorkspaceHeader({
   onToggleAutoCompile,
   onCompile,
   onCancel,
+  sidebar,
 }: {
   readonly project: Project;
   readonly saveStatus: SaveStatus;
@@ -74,6 +76,8 @@ export function WorkspaceHeader({
   readonly onToggleAutoCompile: () => void;
   readonly onCompile: () => void;
   readonly onCancel: () => void;
+  /** Explorer collapse control; omitted on mobile, where files live in a tab. */
+  readonly sidebar?: { readonly collapsed: boolean; readonly onToggle: () => void } | undefined;
 }) {
   const { theme, toggle } = useTheme();
   const busy = compileState.status === "compiling" || compileState.status === "initializing";
@@ -94,6 +98,13 @@ export function WorkspaceHeader({
           className="transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110"
         />
       </Link>
+      {sidebar === undefined ? null : (
+        <SidebarToggle
+          collapsed={sidebar.collapsed}
+          onToggle={sidebar.onToggle}
+          className="-ml-1"
+        />
+      )}
       <h1 className="truncate font-semibold tracking-tight">{project.title}</h1>
       <Badge className="max-md:hidden">{engineLabel(project)}</Badge>
       <span
