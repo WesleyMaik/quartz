@@ -29,6 +29,7 @@ export {
   PlayIcon,
   PlusSignIcon,
   Search01Icon,
+  SidebarLeft01Icon,
   StarIcon,
   Sun03Icon,
   Upload04Icon,
