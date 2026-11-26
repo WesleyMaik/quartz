@@ -5,5 +5,6 @@ import { SiglumEngine, type SiglumEngineOptions } from "./siglum-engine";
 export const createLatexEngine = (options: SiglumEngineOptions): CompileEngine =>
   new SiglumEngine(options);
 
+export { LATEX_EXTRAS_ID } from "./extra-packages";
 export { parseLatexLog } from "./log-parser";
 export { SIGLUM_RELEASE_ID, type SiglumEngineOptions } from "./siglum-engine";

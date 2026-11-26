@@ -5,8 +5,8 @@ import type {
   HostResult,
   InitProgress,
 } from "@qrtz/compiler-core";
-import type { SiglumCompiler } from "@siglum/engine";
 import siglumWorkerUrl from "@siglum/engine/worker?url";
+import { ExtraPackageSource, LATEX_EXTRAS_ID } from "./extra-packages";
 import { parseLatexLog } from "./log-parser";
 import { OfflineSiglumCompiler } from "./offline-siglum";
 
@@ -26,41 +26,47 @@ const MAX_LOG_CHARS = 200_000;
 /**
  * Siglum (BusyTeX, TeX Live 2026) behind Quartz's `CompileEngine` contract.
  * Siglum manages its own worker, so this adapter runs on the main thread and only forwards
- * project files. Packages come exclusively from the self-hosted runtime: CTAN proxy requests (a
- * server) are answered locally as unavailable, and Siglum's document cache is disabled.
+ * project files. Packages come exclusively from the Quartz origin: the self-hosted runtime plus the
+ * extras folder (packages the runtime lacks), never a CTAN proxy; Siglum's document cache is off.
  */
 export class SiglumEngine implements CompileEngine {
   readonly engine = "latex" as const;
-  private compiler: SiglumCompiler | undefined;
+  private compiler: OfflineSiglumCompiler | undefined;
   private cancelCurrent: (() => void) | undefined;
   /** Engine messages (bundle loading, retries) shown with the TeX log. */
   private engineLog: string[] = [];
 
   constructor(private readonly options: SiglumEngineOptions) {}
 
-  private create(): SiglumCompiler {
+  private create(): OfflineSiglumCompiler {
     const base = new URL(`${SIGLUM_RELEASE_ID}/`, this.options.assetBaseUrl).href.replace(
       /\/$/,
       "",
     );
     const report = this.options.onProgress;
-    return new OfflineSiglumCompiler({
-      bundlesUrl: base,
-      wasmUrl: `${base}/wasm/busytex.wasm`,
-      jsUrl: `${base}/wasm/busytex.js`,
-      xzwasmUrl: `${base}/xzwasm.js`,
-      workerUrl: siglumWorkerUrl,
-      enableDocCache: false,
-      onLog: (message: string) => {
-        if (this.engineLog.length < 500) this.engineLog.push(message);
+    const extras = new ExtraPackageSource(
+      new URL(`${LATEX_EXTRAS_ID}/`, this.options.assetBaseUrl).href,
+    );
+    return new OfflineSiglumCompiler(
+      {
+        bundlesUrl: base,
+        wasmUrl: `${base}/wasm/busytex.wasm`,
+        jsUrl: `${base}/wasm/busytex.js`,
+        xzwasmUrl: `${base}/xzwasm.js`,
+        workerUrl: siglumWorkerUrl,
+        enableDocCache: false,
+        onLog: (message: string) => {
+          if (this.engineLog.length < 500) this.engineLog.push(message);
+        },
+        ...(report === undefined
+          ? {}
+          : {
+              onProgress: (stage: string, detail: string) =>
+                report({ phase: "download", message: detail || stage }),
+            }),
       },
-      ...(report === undefined
-        ? {}
-        : {
-            onProgress: (stage: string, detail: string) =>
-              report({ phase: "download", message: detail || stage }),
-          }),
-    });
+      extras,
+    );
   }
 
   async compile(project: CompilationProject): Promise<HostResult> {
@@ -72,6 +78,7 @@ export class SiglumEngine implements CompileEngine {
     }
     const compiler = this.compiler;
     await compiler.init();
+    await compiler.preloadExtras();
 
     const entry = project.files.find((file) => file.path === project.entry);
     if (entry === undefined || entry.kind !== "text") {
