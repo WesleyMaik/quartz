@@ -20,6 +20,8 @@ export {
   FolderAddIcon,
   FolderOpenIcon,
   GridViewIcon,
+  LayoutAlignLeftIcon,
+  LayoutAlignRightIcon,
   ListViewIcon,
   Loading03Icon,
   MinusSignIcon,
