@@ -13,10 +13,12 @@ import {
   Folder01Icon,
   GridViewIcon,
   ListViewIcon,
+  Loading03Icon,
   Moon02Icon,
   MoreHorizontalIcon,
   Search01Icon,
   Sun03Icon,
+  Upload04Icon,
 } from "@qrtz/ui/icons";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
@@ -33,6 +35,7 @@ import { SidebarToggle } from "../shared/sidebar-toggle";
 import { NewProjectDialog } from "./new-project-dialog";
 import { CardThumbnail, RowThumbnail } from "./project-thumbnail";
 import { type DashboardView, useDashboardView } from "./use-dashboard-view";
+import { useProjectImport } from "./use-project-import";
 
 type EngineFilter = "all" | Engine;
 
@@ -90,6 +93,15 @@ export function DashboardPage() {
     }
     navigate(`/p/${project.id}`);
   };
+
+  const projectImport = useProjectImport(afterCreate);
+  const importIcon = (
+    <Icon
+      icon={projectImport.busy ? Loading03Icon : Upload04Icon}
+      size={15}
+      className={cn(projectImport.busy && "animate-spin")}
+    />
+  );
 
   const needle = query.trim().toLowerCase();
   const visible = list?.filter(
@@ -347,6 +359,17 @@ export function DashboardPage() {
               ))}
             </fieldset>
             <Button
+              variant="outline"
+              onClick={projectImport.pick}
+              disabled={projectImport.busy}
+              aria-label="Import ZIP"
+              title="Import a ZIP archive"
+              className="max-md:size-9 max-md:px-0"
+            >
+              {importIcon}
+              <span className="max-md:hidden">Import</span>
+            </Button>
+            <Button
               onClick={() => setCreating(true)}
               aria-label="New project"
               className="max-md:size-9 max-md:px-0"
@@ -367,9 +390,18 @@ export function DashboardPage() {
                   Create a LaTeX or Typst project to start writing. Everything stays in this
                   browser.
                 </p>
-                <Button className="mt-5" onClick={() => setCreating(true)}>
-                  <Icon icon={Add01Icon} size={15} /> Create your first project
-                </Button>
+                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <Button onClick={() => setCreating(true)}>
+                    <Icon icon={Add01Icon} size={15} /> Create your first project
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={projectImport.pick}
+                    disabled={projectImport.busy}
+                  >
+                    {importIcon} Import ZIP
+                  </Button>
+                </div>
               </div>
             ) : visible.length === 0 ? (
               <p className="fade-in animate-in p-10 text-center text-muted-foreground">
@@ -446,6 +478,7 @@ export function DashboardPage() {
         </div>
       </main>
 
+      {projectImport.elements}
       <NewProjectDialog open={creating} onOpenChange={setCreating} onCreated={afterCreate} />
       <PromptDialog
         open={renaming !== undefined}

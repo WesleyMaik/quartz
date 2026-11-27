@@ -5,6 +5,7 @@ import {
   ThumbnailRepository,
 } from "@qrtz/storage";
 import { createContext, type ReactNode, useContext } from "react";
+import { readArchiveInWorker } from "../services/archive-reader";
 import { CompileService } from "../services/compile-service";
 import { FileService } from "../services/file-service";
 import { ProjectService } from "../services/project-service";
@@ -25,7 +26,7 @@ export function createServices(): Services {
   const thumbnails = new ThumbnailService(new ThumbnailRepository(db), renderThumbnail);
   return {
     db,
-    projects: new ProjectService(new ProjectRepository(db), fileRepository),
+    projects: new ProjectService(new ProjectRepository(db), fileRepository, readArchiveInWorker),
     files: new FileService(fileRepository, db),
     compiler: new CompileService(
       (projectId) => fileRepository.snapshot(projectId),
