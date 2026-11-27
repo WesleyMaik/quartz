@@ -20,7 +20,7 @@ const COMMENT = /(?<!\\)(?:\\\\)*%/;
 const INLINE_VERBATIM = /\\(?:verb\*?|lstinline)([^a-zA-Z*\s{[])[^\n]*?\1/g;
 
 /** Blanks comments, verbatim material and `\iffalse` blocks, none of which produce headings. */
-function maskLatex(source: string): string {
+export function maskLatex(source: string): string {
   let verbatimEnd: string | undefined;
   const lines = source.split("\n").map((original) => {
     let line = original;
@@ -60,7 +60,7 @@ interface Group {
 }
 
 /** Reads a balanced `{...}` or `[...]` group that starts at the next non-space character. */
-function readGroup(
+export function readGroup(
   text: string,
   from: number,
   open: "{" | "[",
@@ -148,17 +148,20 @@ function removeCommands(title: string): string {
   return result;
 }
 
+/** Replaces accent commands such as `\c{c}` and `\'e` with combining characters. */
+export const applyAccents = (source: string): string =>
+  source.replace(
+    /\\(?:(['`^"~=.])\s*|([cvuHrk])(?:\s+|(?=\{)))(?:\{\s*\\?([a-zA-Z])\s*\}|\\?([a-zA-Z]))/g,
+    (_, symbol: string | undefined, letter: string | undefined, braced, bare) =>
+      `${braced ?? bare}${COMBINING_MARKS[symbol ?? letter ?? ""] ?? ""}`,
+  );
+
 /** Turns the LaTeX source of a heading into the text a reader would see. */
 function plainTitle(source: string): string {
-  return removeCommands(source)
+  return applyAccents(removeCommands(source))
     .replace(/\\\\/g, " ")
     .replace(/\\([&%$#_{}])/g, (_, char: string) =>
       String.fromCharCode(ESCAPE_BASE + char.charCodeAt(0)),
-    )
-    .replace(
-      /\\(?:(['`^"~=.])\s*|([cvuHrk])(?:\s+|(?=\{)))(?:\{\s*\\?([a-zA-Z])\s*\}|\\?([a-zA-Z]))/g,
-      (_, symbol: string | undefined, letter: string | undefined, braced, bare) =>
-        `${braced ?? bare}${COMBINING_MARKS[symbol ?? letter ?? ""] ?? ""}`,
     )
     .replace(/\\([a-zA-Z@]+)\*?/g, (_, name: string) => SYMBOLS[name] ?? "")
     .replace(/\\[,;: !]|~/g, " ")

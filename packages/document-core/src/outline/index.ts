@@ -72,6 +72,12 @@ function walk(sources: ReadonlyMap<ProjectPath, string>, root: ProjectPath) {
   return { nodes: nodes as readonly OutlineNode[], visited };
 }
 
+/** Sources that make up the document compiled from `entry`, in the order they are reached. */
+export const documentFiles = (
+  sources: ReadonlyMap<ProjectPath, string>,
+  entry: ProjectPath,
+): readonly ProjectPath[] => [...walk(sources, entry).visited];
+
 /**
  * Heading tree of the document compiled from `entry`, following included files in document order.
  * When the file being edited is a source that the document does not include, its own outline is

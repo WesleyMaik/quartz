@@ -5,5 +5,6 @@ export * from "./model";
 export * from "./outline";
 export * from "./paths";
 export * from "./result";
+export * from "./statistics";
 export * from "./templates";
 export * from "./upload-plan";

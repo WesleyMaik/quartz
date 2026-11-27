@@ -1,7 +1,7 @@
 import { blank, directoryOf, joinPath, type OutlineItem, type OutlineScanner } from "./types";
 
 /** Blanks comments and fenced raw blocks, which never produce headings. */
-function maskTypst(source: string): string {
+export function maskTypst(source: string): string {
   let result = "";
   let index = 0;
   const copy = (end: number) => {
