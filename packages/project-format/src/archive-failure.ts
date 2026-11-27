@@ -1,4 +1,4 @@
-import type { QuartzErrorCode } from "@qrtz/document-core";
+import type { QuartzErrorCode, QuartzErrorDetail } from "@qrtz/document-core";
 
 export type ArchiveErrorCode = Extract<QuartzErrorCode, `archive.${string}`>;
 
@@ -7,6 +7,7 @@ export class ArchiveFailure extends Error {
   constructor(
     readonly code: ArchiveErrorCode,
     message: string,
+    readonly detail: QuartzErrorDetail = {},
   ) {
     super(message);
     this.name = "ArchiveFailure";
