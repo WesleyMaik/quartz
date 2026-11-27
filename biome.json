@@ -10,7 +10,8 @@
       "!**/public/engines",
       "!docs",
       "!.agents",
-      "!.claude"
+      "!.claude",
+      "!**/*.md"
     ]
   },
   "formatter": {
