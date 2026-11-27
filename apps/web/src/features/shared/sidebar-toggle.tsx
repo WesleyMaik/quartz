@@ -1,5 +1,6 @@
 import { Button, cn, Icon } from "@qrtz/ui";
 import { LayoutAlignLeftIcon } from "@qrtz/ui/icons";
+import { useIntl } from "react-intl";
 
 /** Collapse/pin button; the icon mirrors to point where the sidebar will go. */
 export function SidebarToggle({
@@ -11,14 +12,15 @@ export function SidebarToggle({
   readonly onToggle: () => void;
   readonly className?: string;
 }) {
-  const label = collapsed ? "Show sidebar" : "Hide sidebar";
+  const intl = useIntl();
+  const label = intl.formatMessage({ id: collapsed ? "sidebar.show" : "sidebar.hide" });
   return (
     <Button
       variant="ghost"
       size="icon"
       aria-label={label}
       aria-expanded={!collapsed}
-      title={`${label} (Ctrl+B)`}
+      title={intl.formatMessage({ id: "sidebar.shortcut" }, { label })}
       onClick={onToggle}
       className={cn("group/toggle", className)}
     >

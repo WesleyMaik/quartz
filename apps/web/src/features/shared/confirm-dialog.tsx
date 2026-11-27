@@ -1,4 +1,5 @@
 import { Button, Dialog } from "@qrtz/ui";
+import { useIntl } from "react-intl";
 
 export function ConfirmDialog({
   open,
@@ -17,6 +18,7 @@ export function ConfirmDialog({
   readonly destructive?: boolean;
   readonly onConfirm: () => Promise<void>;
 }) {
+  const intl = useIntl();
   return (
     <Dialog
       open={open}
@@ -26,7 +28,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {intl.formatMessage({ id: "common.cancel" })}
           </Button>
           <Button
             variant={destructive ? "destructive" : "default"}

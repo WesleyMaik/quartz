@@ -1,8 +1,10 @@
 import { Toaster } from "@qrtz/ui";
 import { lazy, Suspense } from "react";
+import { useIntl } from "react-intl";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { DashboardPage } from "../features/dashboard/dashboard-page";
 import { ProjectLoadingScreen } from "../features/shared/project-loading-screen";
+import { LocaleProvider } from "./intl";
 import { type Services, ServicesProvider } from "./services";
 import { useSystemThemeSync } from "./theme";
 
@@ -29,12 +31,27 @@ const router = createBrowserRouter(
   { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" },
 );
 
+function Notifications() {
+  const intl = useIntl();
+  return (
+    <Toaster
+      position="bottom-right"
+      richColors
+      closeButton
+      containerAriaLabel={intl.formatMessage({ id: "notifications.label" })}
+      toastOptions={{ closeButtonAriaLabel: intl.formatMessage({ id: "notifications.close" }) }}
+    />
+  );
+}
+
 export function App({ services }: { services: Services }) {
   useSystemThemeSync();
   return (
-    <ServicesProvider services={services}>
-      <RouterProvider router={router} />
-      <Toaster position="bottom-right" richColors closeButton />
-    </ServicesProvider>
+    <LocaleProvider>
+      <ServicesProvider services={services}>
+        <RouterProvider router={router} />
+        <Notifications />
+      </ServicesProvider>
+    </LocaleProvider>
   );
 }

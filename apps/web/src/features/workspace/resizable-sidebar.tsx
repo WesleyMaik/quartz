@@ -1,5 +1,6 @@
 import { cn, ResizeSeparator } from "@qrtz/ui";
 import { type ReactNode, useState } from "react";
+import { useIntl } from "react-intl";
 import { useResizableSize } from "../../app/use-resizable-size";
 import { useWindowWidth } from "../../app/use-window-width";
 
@@ -19,6 +20,7 @@ export function ResizableSidebar({
   readonly collapsed: boolean;
   readonly children: ReactNode;
 }) {
+  const intl = useIntl();
   const windowWidth = useWindowWidth();
   const limits = {
     min: MIN_WIDTH,
@@ -52,7 +54,7 @@ export function ResizableSidebar({
       </div>
       {collapsed ? null : (
         <ResizeSeparator
-          label="Resize sidebar"
+          label={intl.formatMessage({ id: "sidebar.resize" })}
           edge="right"
           value={size}
           min={limits.min}

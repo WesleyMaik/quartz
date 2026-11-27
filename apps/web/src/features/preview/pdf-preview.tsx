@@ -9,7 +9,9 @@ import {
   PlusSignIcon,
 } from "@qrtz/ui/icons";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useIntl } from "react-intl";
 import { useSettings } from "../../app/settings";
+import { useFormat } from "../../app/use-format";
 import { downloadBlob } from "../../lib/download";
 import { getDocument, type PDFDocumentLoadingTask } from "../../lib/pdfjs";
 import { EventBus, PDFLinkService, PDFViewer } from "../../lib/pdfjs-viewer";
@@ -52,6 +54,8 @@ async function readDetails(pdf: LoadedPdf): Promise<PdfDetails> {
  * navigation. Scripting and eval are disabled because compiled PDFs come from untrusted input.
  */
 export function PdfPreview({ bytes, fileName, notice, emptyMessage, renderInfo }: PdfPreviewProps) {
+  const intl = useIntl();
+  const format = useFormat();
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<PDFViewer | undefined>(undefined);
   /** PDF.js 6 releases a document through its loading task. */
@@ -167,7 +171,10 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage, renderInfo }
   };
 
   return (
-    <section className="flex h-full flex-col" aria-label="PDF preview">
+    <section
+      className="flex h-full flex-col"
+      aria-label={intl.formatMessage({ id: "preview.label" })}
+    >
       <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3 text-xs">
         <span className="truncate font-medium text-sm">{fileName}</span>
         <div className="flex-1" />
@@ -178,10 +185,11 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage, renderInfo }
           className={cn(showInfo && "bg-muted")}
           onClick={() => setShowInfo((value) => !value)}
         >
-          <Icon icon={InformationCircleIcon} size={14} /> Info
+          <Icon icon={InformationCircleIcon} size={14} />{" "}
+          {intl.formatMessage({ id: "preview.info" })}
         </Button>
         <Button variant="ghost" size="sm" onClick={download} disabled={bytes === undefined}>
-          <Icon icon={Download04Icon} size={14} /> Download
+          <Icon icon={Download04Icon} size={14} /> {intl.formatMessage({ id: "preview.download" })}
         </Button>
       </div>
       <div className="relative flex-1">
@@ -209,13 +217,23 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage, renderInfo }
         )}
         {page.total === 0 ? null : (
           <div className="fade-in slide-in-from-bottom-3 absolute bottom-4 left-1/2 flex max-w-[calc(100%-1rem)] -translate-x-1/2 animate-in items-center gap-0.5 overflow-x-auto whitespace-nowrap rounded-full border bg-popover/90 p-1 text-xs shadow-lg backdrop-blur-md duration-300">
-            <Button variant="ghost" size="icon" onClick={() => go(-1)} aria-label="Previous page">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => go(-1)}
+              aria-label={intl.formatMessage({ id: "preview.previous_page" })}
+            >
               <Icon icon={ArrowLeft01Icon} size={14} />
             </Button>
             <span className="min-w-12 text-center tabular-nums" aria-live="polite">
               {page.current} / {page.total}
             </span>
-            <Button variant="ghost" size="icon" onClick={() => go(1)} aria-label="Next page">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => go(1)}
+              aria-label={intl.formatMessage({ id: "preview.next_page" })}
+            >
               <Icon icon={ArrowRight01Icon} size={14} />
             </Button>
             <div className="mx-1 h-4 w-px bg-border" />
@@ -223,14 +241,19 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage, renderInfo }
               variant="ghost"
               size="icon"
               onClick={() => zoom(1 / 1.15)}
-              aria-label="Zoom out"
+              aria-label={intl.formatMessage({ id: "preview.zoom_out" })}
             >
               <Icon icon={MinusSignIcon} size={14} />
             </Button>
             <span className="w-10 text-center tabular-nums">
-              {scale === undefined ? "-" : `${Math.round(scale * 100)}%`}
+              {scale === undefined ? "-" : format.percent(scale)}
             </span>
-            <Button variant="ghost" size="icon" onClick={() => zoom(1.15)} aria-label="Zoom in">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => zoom(1.15)}
+              aria-label={intl.formatMessage({ id: "preview.zoom_in" })}
+            >
               <Icon icon={PlusSignIcon} size={14} />
             </Button>
             <Button
@@ -241,7 +264,7 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage, renderInfo }
                   viewerRef.current.currentScaleValue = "page-width";
               }}
             >
-              Fit width
+              {intl.formatMessage({ id: "preview.fit_width" })}
             </Button>
           </div>
         )}

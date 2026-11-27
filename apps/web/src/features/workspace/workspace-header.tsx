@@ -11,9 +11,10 @@ import {
   PlayIcon,
   Sun03Icon,
 } from "@qrtz/ui/icons";
+import { useIntl } from "react-intl";
 import { Link } from "react-router";
 import { useTheme } from "../../app/theme";
-import { formatTime } from "../../lib/format";
+import { useFormat } from "../../app/use-format";
 import type { CompileState } from "../../services/compile-service";
 import { QuartzLogo } from "../shared/quartz-logo";
 import { SidebarToggle } from "../shared/sidebar-toggle";
@@ -25,21 +26,39 @@ const engineLabel = (project: Project): string =>
     ? `LaTeX · ${project.compiler.variant === "xelatex" ? "XeLaTeX" : "pdfLaTeX"}`
     : "Typst";
 
+const BUSY_LABELS = {
+  initializing: "header.build.loading",
+  compiling: "header.build.compiling",
+  queued: "header.build.queued",
+} as const;
+
 function CompileIndicator({ state }: { readonly state: CompileState }) {
-  const busy =
-    state.status === "initializing" || state.status === "compiling" || state.status === "queued";
-  if (busy) {
+  const intl = useIntl();
+  const format = useFormat();
+  if (
+    state.status === "initializing" ||
+    state.status === "compiling" ||
+    state.status === "queued"
+  ) {
     return (
-      <span className="fade-in flex animate-in items-center gap-1.5 text-muted-foreground">
+      <span
+        className="fade-in flex animate-in items-center gap-1.5 text-muted-foreground"
+        title={state.detail}
+      >
         <Icon icon={Loading03Icon} size={14} className="animate-spin" />{" "}
-        {state.message || "Compiling"}
+        {intl.formatMessage({ id: BUSY_LABELS[state.status] })}
       </span>
     );
   }
   if (state.status === "error") {
     return (
       <span className="fade-in slide-in-from-top-1 flex animate-in items-center gap-1.5 text-destructive">
-        <Icon icon={AlertCircleIcon} size={14} /> {state.message}
+        <Icon icon={AlertCircleIcon} size={14} />{" "}
+        {state.detail ??
+          intl.formatMessage(
+            { id: "header.build.errors" },
+            { count: state.diagnostics.filter((d) => d.severity === "error").length },
+          )}
       </span>
     );
   }
@@ -51,12 +70,25 @@ function CompileIndicator({ state }: { readonly state: CompileState }) {
           size={14}
           className="zoom-in-50 animate-in text-success duration-300"
         />
-        Built {formatTime(state.lastPdf.builtAt)}
-        {state.durationMs === undefined ? "" : ` in ${Math.round(state.durationMs)} ms`}
+        {intl.formatMessage(
+          {
+            id: state.durationMs === undefined ? "header.build.built" : "header.build.built_in",
+          },
+          {
+            time: format.time(state.lastPdf.builtAt),
+            duration: format.number(Math.round(state.durationMs ?? 0)),
+          },
+        )}
       </span>
     );
   }
-  if (state.status === "cancelled") return <span className="text-muted-foreground">Cancelled</span>;
+  if (state.status === "cancelled") {
+    return (
+      <span className="text-muted-foreground">
+        {intl.formatMessage({ id: "header.build.cancelled" })}
+      </span>
+    );
+  }
   return null;
 }
 
@@ -83,13 +115,14 @@ export function WorkspaceHeader({
   readonly sidebar?: { readonly collapsed: boolean; readonly onToggle: () => void } | undefined;
 }) {
   const { theme, toggle } = useTheme();
+  const intl = useIntl();
   const busy = compileState.status === "compiling" || compileState.status === "initializing";
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 px-3">
       <Link
         to="/"
         className="pressable group flex items-center gap-1.5 rounded-md py-1 pr-1 pl-0.5 font-semibold hover:bg-muted"
-        aria-label="Back to projects"
+        aria-label={intl.formatMessage({ id: "common.back_to_projects" })}
       >
         <Icon
           icon={ArrowLeft01Icon}
@@ -121,11 +154,7 @@ export function WorkspaceHeader({
           )}
         />
         <span className={cn(saveStatus !== "saved" && "text-foreground")}>
-          {saveStatus === "saved"
-            ? "Saved"
-            : saveStatus === "saving"
-              ? "Saving…"
-              : "Unsaved changes"}
+          {intl.formatMessage({ id: `header.save.${saveStatus}` })}
         </span>
       </span>
       <div className="flex-1" />
@@ -136,26 +165,40 @@ export function WorkspaceHeader({
         <Switch
           checked={autoCompile}
           onCheckedChange={onToggleAutoCompile}
-          aria-label="Auto compile"
+          aria-label={intl.formatMessage({ id: "header.auto_compile" })}
         />
-        <span aria-hidden="true">Auto</span>
+        <span aria-hidden="true">{intl.formatMessage({ id: "header.auto" })}</span>
       </div>
-      <Button variant="ghost" size="sm" onClick={onExport} title="Download project as ZIP">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onExport}
+        title={intl.formatMessage({ id: "header.export_title" })}
+      >
         <Icon icon={Download04Icon} size={14} />
-        <span className="max-md:sr-only">Export (zip)</span>
+        <span className="max-md:sr-only">{intl.formatMessage({ id: "header.export" })}</span>
       </Button>
       {busy ? (
         <Button variant="outline" size="sm" onClick={onCancel}>
           <Icon icon={Cancel01Icon} size={14} />
-          <span className="max-md:sr-only">Cancel</span>
+          <span className="max-md:sr-only">{intl.formatMessage({ id: "common.cancel" })}</span>
         </Button>
       ) : (
-        <Button size="sm" onClick={onCompile} title="Compile (Ctrl+Enter)">
+        <Button
+          size="sm"
+          onClick={onCompile}
+          title={intl.formatMessage({ id: "header.compile_title" })}
+        >
           <Icon icon={PlayIcon} size={14} />
-          <span className="max-md:sr-only">Compile</span>
+          <span className="max-md:sr-only">{intl.formatMessage({ id: "header.compile" })}</span>
         </Button>
       )}
-      <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={intl.formatMessage({ id: "common.toggle_theme" })}
+        onClick={toggle}
+      >
         <Icon
           key={theme}
           icon={theme === "dark" ? Sun03Icon : Moon02Icon}

@@ -1,4 +1,5 @@
 import type { Engine, Project } from "@qrtz/document-core";
+import type { MessageId } from "@qrtz/messages";
 import {
   isNearQuota,
   readStorageStatus,
@@ -22,11 +23,13 @@ import {
 } from "@qrtz/ui/icons";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
+import { useIntl } from "react-intl";
 import { useNavigate } from "react-router";
 import { useServices } from "../../app/services";
 import { useTheme } from "../../app/theme";
+import { useDescribeError } from "../../app/use-describe-error";
+import { useFormat } from "../../app/use-format";
 import { useSidebar } from "../../app/use-sidebar";
-import { formatBytes, formatRelative } from "../../lib/format";
 import { SettingsButton } from "../settings/settings-button";
 import { ConfirmDialog } from "../shared/confirm-dialog";
 import { exportProject } from "../shared/export-project";
@@ -40,22 +43,18 @@ import { useProjectImport } from "./use-project-import";
 
 type EngineFilter = "all" | Engine;
 
-const FILTERS: readonly { readonly id: EngineFilter; readonly label: string }[] = [
-  { id: "all", label: "All projects" },
-  { id: "latex", label: "LaTeX" },
-  { id: "typst", label: "Typst" },
-];
+/** Engine names are proper nouns; only the unfiltered entry is translated. */
+const FILTERS: readonly EngineFilter[] = ["all", "latex", "typst"];
+const ENGINE_NAMES: Readonly<Record<Engine, string>> = { latex: "LaTeX", typst: "Typst" };
 
 const VIEWS: readonly {
   readonly id: DashboardView;
-  readonly label: string;
+  readonly label: MessageId;
   readonly icon: typeof GridViewIcon;
 }[] = [
-  { id: "list", label: "List view", icon: ListViewIcon },
-  { id: "grid", label: "Grid view", icon: GridViewIcon },
+  { id: "list", label: "dashboard.view.list", icon: ListViewIcon },
+  { id: "grid", label: "dashboard.view.grid", icon: GridViewIcon },
 ];
-
-const engineName = (project: Project): string => (project.engine === "latex" ? "LaTeX" : "Typst");
 
 /** Rows beyond this index appear without a stagger delay, so long lists do not feel slow. */
 const MAX_STAGGERED_ROWS = 12;
@@ -64,6 +63,11 @@ export function DashboardPage() {
   const { db, projects } = useServices();
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
+  const intl = useIntl();
+  const format = useFormat();
+  const describeError = useDescribeError();
+  const filterLabel = (id: EngineFilter): string =>
+    id === "all" ? intl.formatMessage({ id: "dashboard.filter.all" }) : ENGINE_NAMES[id];
   const list = useLiveQuery(() => db.projects.orderBy("updatedAt").reverse().toArray(), [db]);
   const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState<Project | undefined>();
@@ -89,8 +93,7 @@ export function DashboardPage() {
     if (storage?.persisted === false) {
       const granted = await requestPersistentStorage();
       setStorage(await readStorageStatus());
-      if (!granted)
-        toast.message("Projects are stored in this browser only. Export backups regularly.");
+      if (!granted) toast.message(intl.formatMessage({ id: "dashboard.local_only" }));
     }
     navigate(`/p/${project.id}`);
   };
@@ -112,28 +115,45 @@ export function DashboardPage() {
   );
   const sizeOf = (project: Project): string => {
     const bytes = sizes?.get(project.id);
-    return bytes === undefined ? "-" : formatBytes(bytes);
+    return bytes === undefined ? "-" : format.bytes(bytes);
   };
   const stagger = (index: number) => ({
     animationDelay: `${Math.min(index, MAX_STAGGERED_ROWS) * 25}ms`,
   });
   const actionsFor = (project: Project): MenuAction[] => [
-    { id: "open", label: "Open", onSelect: () => navigate(`/p/${project.id}`) },
-    { id: "rename", label: "Rename", onSelect: () => setRenaming(project) },
+    {
+      id: "open",
+      label: intl.formatMessage({ id: "dashboard.action.open" }),
+      onSelect: () => navigate(`/p/${project.id}`),
+    },
+    {
+      id: "rename",
+      label: intl.formatMessage({ id: "common.rename" }),
+      onSelect: () => setRenaming(project),
+    },
     {
       id: "duplicate",
-      label: "Duplicate",
+      label: intl.formatMessage({ id: "dashboard.action.duplicate" }),
       onSelect: async () => {
-        const result = await projects.duplicate(project);
-        if (!result.ok) toast.error(result.error.message);
+        const title = intl.formatMessage(
+          { id: "dashboard.duplicate_title" },
+          { title: project.title },
+        );
+        const result = await projects.duplicate(project, title);
+        if (!result.ok) toast.error(describeError(result.error));
       },
     },
     {
       id: "export",
-      label: "Download as ZIP",
-      onSelect: () => void exportProject(projects, project),
+      label: intl.formatMessage({ id: "dashboard.action.export" }),
+      onSelect: () => void exportProject(projects, project, describeError),
     },
-    { id: "delete", label: "Delete", destructive: true, onSelect: () => setDeleting(project) },
+    {
+      id: "delete",
+      label: intl.formatMessage({ id: "common.delete" }),
+      destructive: true,
+      onSelect: () => setDeleting(project),
+    },
   ];
   const menuFor = (project: Project, className?: string) => (
     <DropdownMenu
@@ -141,7 +161,7 @@ export function DashboardPage() {
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Actions for ${project.title}`}
+          aria-label={intl.formatMessage({ id: "dashboard.actions_for" }, { title: project.title })}
           className={cn(
             "opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[popup-open]:opacity-100",
             className,
@@ -153,7 +173,7 @@ export function DashboardPage() {
       actions={actionsFor(project)}
     />
   );
-  const heading = FILTERS.find((item) => item.id === filter)?.label ?? "Projects";
+  const heading = filterLabel(filter);
   const usageRatio =
     storage?.usageBytes !== undefined && storage.quotaBytes !== undefined && storage.quotaBytes > 0
       ? Math.min(1, storage.usageBytes / storage.quotaBytes)
@@ -183,7 +203,12 @@ export function DashboardPage() {
               Quartz
             </div>
             <div className="flex items-center">
-              <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={intl.formatMessage({ id: "common.toggle_theme" })}
+                onClick={toggle}
+              >
                 <Icon
                   key={theme}
                   icon={theme === "dark" ? Sun03Icon : Moon02Icon}
@@ -194,25 +219,30 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <nav aria-label="Project filters" className="flex flex-col gap-0.5">
-            {FILTERS.map((item) => (
+          <nav
+            aria-label={intl.formatMessage({ id: "dashboard.filters" })}
+            className="flex flex-col gap-0.5"
+          >
+            {FILTERS.map((id) => (
               <button
-                key={item.id}
+                key={id}
                 type="button"
-                aria-current={filter === item.id ? "page" : undefined}
-                onClick={() => setFilter(item.id)}
+                aria-current={filter === id ? "page" : undefined}
+                onClick={() => setFilter(id)}
                 className={cn(
                   "pressable flex h-9 cursor-pointer items-center gap-2.5 rounded-md px-3 text-left text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                  filter === item.id && "bg-muted font-medium text-foreground",
+                  filter === id && "bg-muted font-medium text-foreground",
                 )}
               >
-                <Icon icon={item.id === "all" ? Folder01Icon : File01Icon} size={15} />
-                {item.label}
+                <Icon icon={id === "all" ? Folder01Icon : File01Icon} size={15} />
+                {filterLabel(id)}
                 {list === undefined ? null : (
                   <span className="ml-auto text-muted-foreground text-xs tabular-nums">
-                    {item.id === "all"
-                      ? list.length
-                      : list.filter((project) => project.engine === item.id).length}
+                    {format.number(
+                      id === "all"
+                        ? list.length
+                        : list.filter((project) => project.engine === id).length,
+                    )}
                   </span>
                 )}
               </button>
@@ -221,7 +251,7 @@ export function DashboardPage() {
 
           <div className="mt-auto rounded-lg border bg-card p-3 text-muted-foreground text-xs shadow-xs">
             {storage?.usageBytes === undefined ? (
-              <p>Storage usage unavailable</p>
+              <p>{intl.formatMessage({ id: "dashboard.usage.unavailable" })}</p>
             ) : (
               <>
                 <p
@@ -230,8 +260,18 @@ export function DashboardPage() {
                     isNearQuota(storage) && "text-warning",
                   )}
                 >
-                  {formatBytes(storage.usageBytes)} used
-                  {storage.quotaBytes === undefined ? "" : ` of ${formatBytes(storage.quotaBytes)}`}
+                  {storage.quotaBytes === undefined
+                    ? intl.formatMessage(
+                        { id: "dashboard.usage.used" },
+                        { used: format.bytes(storage.usageBytes) },
+                      )
+                    : intl.formatMessage(
+                        { id: "dashboard.usage.used_of" },
+                        {
+                          used: format.bytes(storage.usageBytes),
+                          total: format.bytes(storage.quotaBytes),
+                        },
+                      )}
                 </p>
                 {usageRatio === undefined ? null : (
                   <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
@@ -247,9 +287,12 @@ export function DashboardPage() {
               </>
             )}
             <p className="mt-2 leading-relaxed">
-              {storage?.persisted === true
-                ? "Persistent storage granted. Nothing leaves your device."
-                : "Storage may be cleared by the browser. Clearing site data deletes projects."}
+              {intl.formatMessage({
+                id:
+                  storage?.persisted === true
+                    ? "dashboard.usage.persistent"
+                    : "dashboard.usage.not_persistent",
+              })}
             </p>
           </div>
           <div className="-mt-4">
@@ -271,7 +314,12 @@ export function DashboardPage() {
           </div>
           <div className="flex items-center">
             <SettingsButton compact />
-            <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={intl.formatMessage({ id: "common.toggle_theme" })}
+              onClick={toggle}
+            >
               <Icon
                 key={theme}
                 icon={theme === "dark" ? Sun03Icon : Moon02Icon}
@@ -304,10 +352,11 @@ export function DashboardPage() {
                     <Icon icon={ArrowDown01Icon} size={16} className="text-muted-foreground" />
                   </button>
                 }
-                actions={FILTERS.map((item) => ({
-                  id: item.id,
-                  label: item.label,
-                  onSelect: () => setFilter(item.id),
+                actions={FILTERS.map((id) => ({
+                  id,
+                  label: filterLabel(id),
+                  selected: filter === id,
+                  onSelect: () => setFilter(id),
                 }))}
               />
             )}
@@ -316,7 +365,7 @@ export function DashboardPage() {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Search projects"
+              aria-label={intl.formatMessage({ id: "dashboard.search" })}
               onClick={() => setSearchOpen(true)}
               className={cn("size-9 md:hidden", searchOpen && "hidden")}
             >
@@ -338,8 +387,8 @@ export function DashboardPage() {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search projects"
-                aria-label="Search projects"
+                placeholder={intl.formatMessage({ id: "dashboard.search" })}
+                aria-label={intl.formatMessage({ id: "dashboard.search" })}
                 className="rounded-full pl-9"
                 autoFocus={searchOpen}
                 onBlur={() => {
@@ -348,14 +397,16 @@ export function DashboardPage() {
               />
             </div>
             <fieldset className="flex shrink-0 items-center rounded-full bg-muted p-0.5 max-sm:hidden">
-              <legend className="sr-only">Layout</legend>
+              <legend className="sr-only">
+                {intl.formatMessage({ id: "dashboard.view.legend" })}
+              </legend>
               {VIEWS.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  aria-label={item.label}
+                  aria-label={intl.formatMessage({ id: item.label })}
                   aria-pressed={view === item.id}
-                  title={item.label}
+                  title={intl.formatMessage({ id: item.label })}
                   onClick={() => setView(item.id)}
                   className={cn(
                     "pressable flex size-7 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:text-foreground",
@@ -370,20 +421,22 @@ export function DashboardPage() {
               variant="outline"
               onClick={projectImport.pick}
               disabled={projectImport.busy}
-              aria-label="Import ZIP"
-              title="Import a ZIP archive"
+              aria-label={intl.formatMessage({ id: "dashboard.import_zip" })}
+              title={intl.formatMessage({ id: "dashboard.import_title" })}
               className="max-md:size-9 max-md:px-0"
             >
               {importIcon}
-              <span className="max-md:hidden">Import</span>
+              <span className="max-md:hidden">
+                {intl.formatMessage({ id: "dashboard.import" })}
+              </span>
             </Button>
             <Button
               onClick={() => setCreating(true)}
-              aria-label="New project"
+              aria-label={intl.formatMessage({ id: "dashboard.new_project" })}
               className="max-md:size-9 max-md:px-0"
             >
               <Icon icon={Add01Icon} size={15} />
-              <span className="max-md:hidden">New</span>
+              <span className="max-md:hidden">{intl.formatMessage({ id: "dashboard.new" })}</span>
             </Button>
           </header>
 
@@ -393,33 +446,35 @@ export function DashboardPage() {
                 <span className="mb-4 flex size-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                   <Icon icon={File01Icon} size={22} />
                 </span>
-                <p className="font-medium text-base">No projects yet</p>
+                <p className="font-medium text-base">
+                  {intl.formatMessage({ id: "dashboard.empty.title" })}
+                </p>
                 <p className="mt-1 text-muted-foreground">
-                  Create a LaTeX or Typst project to start writing. Everything stays in this
-                  browser.
+                  {intl.formatMessage({ id: "dashboard.empty.description" })}
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
                   <Button onClick={() => setCreating(true)}>
-                    <Icon icon={Add01Icon} size={15} /> Create your first project
+                    <Icon icon={Add01Icon} size={15} />{" "}
+                    {intl.formatMessage({ id: "dashboard.empty.create" })}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={projectImport.pick}
                     disabled={projectImport.busy}
                   >
-                    {importIcon} Import ZIP
+                    {importIcon} {intl.formatMessage({ id: "dashboard.import_zip" })}
                   </Button>
                 </div>
               </div>
             ) : visible.length === 0 ? (
               <p className="fade-in animate-in p-10 text-center text-muted-foreground">
-                No projects match your search.
+                {intl.formatMessage({ id: "dashboard.no_match" })}
               </p>
             ) : view === "grid" ? (
               <ul
                 key="grid"
                 className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 p-4 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-4 md:p-6"
-                aria-label="Projects"
+                aria-label={intl.formatMessage({ id: "dashboard.projects" })}
               >
                 {visible.map((project, index) => (
                   <li
@@ -436,8 +491,8 @@ export function DashboardPage() {
                       <span className="flex flex-col gap-1 border-t px-3 py-2.5">
                         <span className="truncate pr-6 font-medium">{project.title}</span>
                         <span className="flex items-center gap-2 text-muted-foreground text-xs">
-                          <Badge>{engineName(project)}</Badge>
-                          <span className="truncate">{formatRelative(project.updatedAt)}</span>
+                          <Badge>{ENGINE_NAMES[project.engine]}</Badge>
+                          <span className="truncate">{format.relative(project.updatedAt)}</span>
                           <span className="ml-auto shrink-0 tabular-nums">{sizeOf(project)}</span>
                         </span>
                       </span>
@@ -449,12 +504,21 @@ export function DashboardPage() {
             ) : (
               <div key="list" className="@container">
                 <div className="flex h-9 items-center gap-3 px-6 text-muted-foreground text-xs">
-                  <span className="flex-1">Name</span>
-                  <span className="w-20 text-right @max-md:hidden">Size</span>
-                  <span className="w-28 text-right @max-lg:hidden">Edited</span>
+                  <span className="flex-1">
+                    {intl.formatMessage({ id: "dashboard.column.name" })}
+                  </span>
+                  <span className="w-20 text-right @max-md:hidden">
+                    {intl.formatMessage({ id: "dashboard.column.size" })}
+                  </span>
+                  <span className="w-28 text-right @max-lg:hidden">
+                    {intl.formatMessage({ id: "dashboard.column.edited" })}
+                  </span>
                   <span className="w-7" />
                 </div>
-                <ul className="px-3 pb-3" aria-label="Projects">
+                <ul
+                  className="px-3 pb-3"
+                  aria-label={intl.formatMessage({ id: "dashboard.projects" })}
+                >
                   {visible.map((project, index) => (
                     <li
                       key={project.id}
@@ -468,13 +532,13 @@ export function DashboardPage() {
                       >
                         <RowThumbnail image={thumbnails?.get(project.id)} />
                         <span className="truncate font-medium">{project.title}</span>
-                        <Badge>{engineName(project)}</Badge>
+                        <Badge>{ENGINE_NAMES[project.engine]}</Badge>
                       </button>
                       <span className="w-20 text-right text-muted-foreground text-xs tabular-nums @max-md:hidden">
                         {sizeOf(project)}
                       </span>
                       <span className="w-28 text-right text-muted-foreground text-xs @max-lg:hidden">
-                        {formatRelative(project.updatedAt)}
+                        {format.relative(project.updatedAt)}
                       </span>
                       {menuFor(project)}
                     </li>
@@ -491,27 +555,30 @@ export function DashboardPage() {
       <PromptDialog
         open={renaming !== undefined}
         onOpenChange={(open) => !open && setRenaming(undefined)}
-        title="Rename project"
-        label="Title"
+        title={intl.formatMessage({ id: "dashboard.rename.title" })}
+        label={intl.formatMessage({ id: "dashboard.title_label" })}
         initialValue={renaming?.title ?? ""}
-        confirmLabel="Rename"
+        confirmLabel={intl.formatMessage({ id: "common.rename" })}
         onSubmit={async (value) => {
           if (renaming === undefined) return undefined;
           const result = await projects.rename(renaming.id, value);
-          return result.ok ? undefined : result.error.message;
+          return result.ok ? undefined : describeError(result.error);
         }}
       />
       <ConfirmDialog
         open={deleting !== undefined}
         onOpenChange={(open) => !open && setDeleting(undefined)}
-        title={`Delete "${deleting?.title ?? ""}"?`}
-        description="All files of this project are removed from this browser. This cannot be undone."
-        confirmLabel="Delete project"
+        title={intl.formatMessage(
+          { id: "dashboard.delete.title" },
+          { title: deleting?.title ?? "" },
+        )}
+        description={intl.formatMessage({ id: "dashboard.delete.description" })}
+        confirmLabel={intl.formatMessage({ id: "dashboard.delete.confirm" })}
         destructive
         onConfirm={async () => {
           if (deleting === undefined) return;
           const result = await projects.delete(deleting.id);
-          if (!result.ok) toast.error(result.error.message);
+          if (!result.ok) toast.error(describeError(result.error));
         }}
       />
     </div>

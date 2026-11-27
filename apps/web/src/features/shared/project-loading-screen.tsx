@@ -1,5 +1,6 @@
 import { cn } from "@qrtz/ui";
 import { useEffect, useState } from "react";
+import { useIntl } from "react-intl";
 
 const LOGO_URL = `${import.meta.env.BASE_URL}quartz-logo-256x256.png`;
 
@@ -36,6 +37,7 @@ export function ProjectLoadingScreen({
   readonly ready?: boolean;
   readonly onFinished?: () => void;
 }) {
+  const intl = useIntl();
   const [progress, setProgress] = useState(pendingProgress);
   const [leaving, setLeaving] = useState(false);
   const [minElapsed, setMinElapsed] = useState(false);
@@ -83,7 +85,7 @@ export function ProjectLoadingScreen({
       )}
       style={{ transitionDuration: `${FADE_MS}ms` }}
       role="progressbar"
-      aria-label="Opening project"
+      aria-label={intl.formatMessage({ id: "loading.label" })}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={percent}
@@ -118,7 +120,9 @@ export function ProjectLoadingScreen({
           style={{ width: `${percent}%`, transitionDuration: finishing }}
         />
       </div>
-      <p className="text-muted-foreground text-xs">Opening project…</p>
+      <p className="text-muted-foreground text-xs">
+        {intl.formatMessage({ id: "loading.status" })}
+      </p>
     </div>
   );
 }

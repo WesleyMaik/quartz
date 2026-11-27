@@ -1,6 +1,7 @@
 import type { DetectionResult } from "@qrtz/document-core";
 import { Button, cn, Dialog } from "@qrtz/ui";
 import { useState } from "react";
+import { useIntl } from "react-intl";
 
 /** Asks which document an imported project compiles, when the archive does not make it obvious. */
 export function MainDocumentDialog({
@@ -15,25 +16,26 @@ export function MainDocumentDialog({
   readonly onConfirm: (entry: string) => void;
 }) {
   const [selected, setSelected] = useState(candidates[0]?.entry ?? "");
+  const intl = useIntl();
   return (
     <Dialog
       open
       onOpenChange={(open) => !open && onCancel()}
-      title="Choose the main document"
-      description="This archive has more than one possible main file. It is the one Quartz compiles."
+      title={intl.formatMessage({ id: "main_document.title" })}
+      description={intl.formatMessage({ id: "main_document.description" })}
       footer={
         <>
           <Button variant="outline" onClick={onCancel}>
-            Cancel
+            {intl.formatMessage({ id: "common.cancel" })}
           </Button>
           <Button onClick={() => onConfirm(selected)} disabled={busy}>
-            Import
+            {intl.formatMessage({ id: "dashboard.import" })}
           </Button>
         </>
       }
     >
       <fieldset className="flex max-h-72 flex-col gap-1.5 overflow-auto p-1">
-        <legend className="sr-only">Main document</legend>
+        <legend className="sr-only">{intl.formatMessage({ id: "main_document.legend" })}</legend>
         {candidates.map((candidate) => (
           <label
             key={candidate.entry}

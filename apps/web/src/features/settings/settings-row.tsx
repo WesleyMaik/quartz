@@ -68,6 +68,7 @@ export function SelectRow<Value extends string>({
         actions={options.map((option) => ({
           id: option.id,
           label: option.label,
+          selected: option.id === value,
           onSelect: () => onChange(option.id),
         }))}
       />

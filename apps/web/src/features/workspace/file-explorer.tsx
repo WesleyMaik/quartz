@@ -27,8 +27,10 @@ import {
   useRef,
   useState,
 } from "react";
+import { useIntl } from "react-intl";
 import { useServices } from "../../app/services";
-import type { UploadSource } from "../../services/file-service";
+import { useDescribeError } from "../../app/use-describe-error";
+import type { BatchOutcome, UploadSource } from "../../services/file-service";
 import { ConfirmDialog } from "../shared/confirm-dialog";
 import { PromptDialog } from "../shared/prompt-dialog";
 import {
@@ -100,6 +102,8 @@ export function FileExplorer({
   readonly onDeleted: (path: string) => void;
 }) {
   const { files } = useServices();
+  const intl = useIntl();
+  const describeError = useDescribeError();
   const tree = useMemo(() => buildFileTree(entries), [entries]);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [pending, setPending] = useState<PendingAction | undefined>();
@@ -166,6 +170,10 @@ export function FileExplorer({
     return only !== undefined && nodes.get(only)?.kind === "folder" ? only : "";
   };
 
+  const reportFailures = (failed: BatchOutcome<unknown>["failed"]) => {
+    for (const { path, error } of failed) toast.error(`${path}: ${describeError(error)}`);
+  };
+
   const pickFiles = (folder: string, input: HTMLInputElement | null) => {
     uploadTarget.current = folder;
     input?.click();
@@ -179,11 +187,11 @@ export function FileExplorer({
     if (sources.length === 0) return;
     const plan = await files.planUpload(project.id, sources, folder);
     if (!plan.ok) {
-      toast.error(plan.error.message);
+      toast.error(describeError(plan.error));
       return;
     }
     if (plan.value.uploads.length === 0) {
-      toast.message("Nothing to upload: every file was skipped or already exists.");
+      toast.message(intl.formatMessage({ id: "explorer.nothing_to_upload" }));
       return;
     }
     if (confirm || plan.value.skipped.length > 0) {
@@ -198,12 +206,10 @@ export function FileExplorer({
     if (folder !== "") setOpen(folder, true);
     for (const name of plan.folders) setOpen(join(folder, name), true);
     if (outcome.done.length > 0) {
-      const where = folder === "" ? "" : ` to ${folder}/`;
-      toast.success(
-        `Uploaded ${outcome.done.length} ${outcome.done.length === 1 ? "file" : "files"}${where}`,
-      );
+      const id = folder === "" ? "explorer.uploaded" : "explorer.uploaded_to";
+      toast.success(intl.formatMessage({ id }, { count: outcome.done.length, folder }));
     }
-    for (const message of outcome.failed) toast.error(message);
+    reportFailures(outcome.failed);
   };
 
   const moveInto = async (paths: readonly ProjectPath[], folder: string) => {
@@ -213,7 +219,7 @@ export function FileExplorer({
       if (folder !== "") setOpen(folder, true);
       setSelected(new Set(outcome.done.map((move) => move.to)));
     }
-    for (const message of outcome.failed) toast.error(message);
+    reportFailures(outcome.failed);
   };
 
   // --- Selection -------------------------------------------------------------------------------
@@ -347,7 +353,10 @@ export function FileExplorer({
       return [
         {
           id: "delete-selected",
-          label: `Delete ${targets.length} items`,
+          label: intl.formatMessage(
+            { id: "explorer.menu.delete_items" },
+            { count: targets.length },
+          ),
           destructive: true,
           onSelect: () => setDeleting(targets),
         },
@@ -357,40 +366,40 @@ export function FileExplorer({
     const actions: MenuAction[] = [
       {
         id: "new-file",
-        label: "New file…",
+        label: intl.formatMessage({ id: "explorer.menu.new_file" }),
         onSelect: () => setPending({ kind: "new-file", parent: folder }),
       },
       {
         id: "new-folder",
-        label: "New folder…",
+        label: intl.formatMessage({ id: "explorer.menu.new_folder" }),
         onSelect: () => setPending({ kind: "new-folder", parent: folder }),
       },
       {
         id: "upload",
-        label: "Upload files…",
+        label: intl.formatMessage({ id: "explorer.menu.upload_files" }),
         onSelect: () => pickFiles(folder, fileInput.current),
       },
       {
         id: "upload-folder",
-        label: "Upload folder…",
+        label: intl.formatMessage({ id: "explorer.menu.upload_folder" }),
         onSelect: () => pickFiles(folder, folderInput.current),
       },
       {
         id: "rename",
-        label: "Rename…",
+        label: intl.formatMessage({ id: "explorer.menu.rename" }),
         onSelect: () => setPending({ kind: "rename", path: node.path }),
       },
     ];
     if (node.kind === "source" && node.path !== project.entry) {
       actions.push({
         id: "entry",
-        label: "Set as main document",
+        label: intl.formatMessage({ id: "explorer.menu.set_main" }),
         onSelect: () => void files.setEntry(project.id, node.path),
       });
     }
     actions.push({
       id: "delete",
-      label: "Delete",
+      label: intl.formatMessage({ id: "common.delete" }),
       destructive: true,
       onSelect: () => setDeleting([node]),
     });
@@ -448,13 +457,20 @@ export function FileExplorer({
               className="shrink-0 opacity-80"
             />
             <span className="truncate">{node.name}</span>
-            {isSelected ? <span className="sr-only">(selected)</span> : null}
+            {isSelected ? (
+              <span className="sr-only">{intl.formatMessage({ id: "explorer.selected" })}</span>
+            ) : null}
             {node.path === project.entry ? (
-              <Icon icon={StarIcon} size={12} className="text-warning" aria-label="Main document" />
+              <Icon
+                icon={StarIcon}
+                size={12}
+                className="text-warning"
+                aria-label={intl.formatMessage({ id: "explorer.main_document" })}
+              />
             ) : null}
             {dirtyPaths.has(node.path) ? (
               <span className="zoom-in-0 ml-auto size-1.5 shrink-0 animate-in rounded-full bg-warning">
-                <span className="sr-only">Unsaved</span>
+                <span className="sr-only">{intl.formatMessage({ id: "explorer.unsaved" })}</span>
               </span>
             ) : null}
           </button>
@@ -470,18 +486,20 @@ export function FileExplorer({
 
   const prompt = (() => {
     if (pending === undefined) return { title: "", label: "", initial: "", confirm: "" };
+    const pathLabel = intl.formatMessage({ id: "explorer.prompt.path" });
     if (pending.kind === "rename") {
-      return { title: "Rename", label: "Path", initial: pending.path, confirm: "Rename" };
+      const rename = intl.formatMessage({ id: "common.rename" });
+      return { title: rename, label: pathLabel, initial: pending.path, confirm: rename };
     }
     const isFile = pending.kind === "new-file";
     return {
-      title: isFile ? "New file" : "New folder",
-      label: "Path",
+      title: intl.formatMessage({ id: isFile ? "explorer.new_file" : "explorer.new_folder" }),
+      label: pathLabel,
       initial: join(
         pending.parent,
         isFile ? (project.engine === "typst" ? "untitled.typ" : "untitled.tex") : "folder",
       ),
-      confirm: "Create",
+      confirm: intl.formatMessage({ id: "new_project.create" }),
     };
   })();
 
@@ -500,13 +518,16 @@ export function FileExplorer({
         })();
 
   return (
-    <nav className="flex h-full flex-col bg-background" aria-label="Project files">
+    <nav
+      className="flex h-full flex-col bg-background"
+      aria-label={intl.formatMessage({ id: "common.project_files" })}
+    >
       <div className="flex h-11 shrink-0 items-center justify-between pr-1 pl-3">
         <span className="font-semibold text-sm tracking-tight">
-          Files
+          {intl.formatMessage({ id: "explorer.title" })}
           {selected.size > 1 ? (
             <span className="fade-in ml-2 animate-in font-normal text-muted-foreground text-xs">
-              {selected.size} selected
+              {intl.formatMessage({ id: "explorer.selected_count" }, { count: selected.size })}
             </span>
           ) : null}
         </span>
@@ -514,7 +535,7 @@ export function FileExplorer({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="New file"
+            aria-label={intl.formatMessage({ id: "explorer.new_file" })}
             onClick={() => setPending({ kind: "new-file", parent: selectedFolder() })}
           >
             <Icon icon={FileAddIcon} size={15} />
@@ -522,7 +543,7 @@ export function FileExplorer({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="New folder"
+            aria-label={intl.formatMessage({ id: "explorer.new_folder" })}
             onClick={() => setPending({ kind: "new-folder", parent: selectedFolder() })}
           >
             <Icon icon={FolderAddIcon} size={15} />
@@ -530,8 +551,8 @@ export function FileExplorer({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Upload files"
-            title="Upload files"
+            aria-label={intl.formatMessage({ id: "explorer.upload_files" })}
+            title={intl.formatMessage({ id: "explorer.upload_files" })}
             onClick={() => pickFiles(selectedFolder(), fileInput.current)}
           >
             <Icon icon={Upload04Icon} size={15} />
@@ -539,8 +560,8 @@ export function FileExplorer({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Upload folder"
-            title="Upload folder"
+            aria-label={intl.formatMessage({ id: "explorer.upload_folder" })}
+            title={intl.formatMessage({ id: "explorer.upload_folder" })}
             onClick={() => pickFiles(selectedFolder(), folderInput.current)}
           >
             <Icon icon={FolderUploadIcon} size={15} />
@@ -549,7 +570,7 @@ export function FileExplorer({
       </div>
       <ul
         ref={listRef}
-        aria-label="Project tree"
+        aria-label={intl.formatMessage({ id: "explorer.tree" })}
         className={cn(
           "relative flex-1 overflow-auto rounded-lg px-2 pb-2 outline-none transition-[background-color,box-shadow] duration-150",
           dropTarget === "" && "bg-primary/5 ring-2 ring-primary/40 ring-inset",
@@ -622,7 +643,7 @@ export function FileExplorer({
           if (pending === undefined) return undefined;
           if (pending.kind === "rename") {
             const result = await files.move(project.id, pending.path, value);
-            if (!result.ok) return result.error.message;
+            if (!result.ok) return describeError(result.error);
             onRenamed(pending.path, value.trim());
             return undefined;
           }
@@ -630,7 +651,7 @@ export function FileExplorer({
             pending.kind === "new-file"
               ? await files.createFile(project.id, value)
               : await files.createFolder(project.id, value);
-          if (!result.ok) return result.error.message;
+          if (!result.ok) return describeError(result.error);
           if (pending.kind === "new-file") onOpen(result.value.path);
           else if (pending.parent !== "") setOpen(pending.parent, true);
           return undefined;
@@ -641,15 +662,18 @@ export function FileExplorer({
         onOpenChange={(open) => !open && setDeleting([])}
         title={
           deleting.length === 1
-            ? `Delete ${deleting[0]?.name ?? ""}?`
-            : `Delete ${deleting.length} items?`
+            ? intl.formatMessage(
+                { id: "explorer.delete.title_one" },
+                { name: deleting[0]?.name ?? "" },
+              )
+            : intl.formatMessage({ id: "explorer.delete.title_many" }, { count: deleting.length })
         }
-        description={
-          deleting.some((node) => node.kind === "folder")
-            ? "Selected folders and everything inside them will be deleted. This cannot be undone."
-            : "This cannot be undone."
-        }
-        confirmLabel="Delete"
+        description={intl.formatMessage({
+          id: deleting.some((node) => node.kind === "folder")
+            ? "explorer.delete.description_folders"
+            : "explorer.delete.description",
+        })}
+        confirmLabel={intl.formatMessage({ id: "common.delete" })}
         destructive
         onConfirm={async () => {
           const targets = deleting.filter(
@@ -658,7 +682,7 @@ export function FileExplorer({
           );
           for (const node of targets) {
             const result = await files.remove(project.id, node.path);
-            if (!result.ok) toast.error(result.error.message);
+            if (!result.ok) toast.error(describeError(result.error));
             else onDeleted(node.path);
           }
           setSelected(new Set());

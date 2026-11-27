@@ -12,7 +12,11 @@ import type { SnapshotFile } from "@qrtz/storage";
 
 export interface CompileState {
   readonly status: CompileStatus;
-  readonly message: string;
+  /**
+   * Raw text from the engine or a thrown error, shown as is: download progress while initializing,
+   * the failure reason when the engine itself failed. Status labels are derived by the interface.
+   */
+  readonly detail: string | undefined;
   readonly diagnostics: readonly CompilerDiagnostic[];
   readonly log: string;
   readonly lastPdf:
@@ -25,7 +29,7 @@ export interface CompileState {
 
 const INITIAL: CompileState = {
   status: "idle",
-  message: "",
+  detail: undefined,
   diagnostics: [],
   log: "",
   lastPdf: undefined,
@@ -116,7 +120,7 @@ export class CompileService {
   private engine(engine: EngineId, projectId: ProjectId): Promise<CompileEngine> {
     let host = this.engines.get(engine);
     if (host === undefined) {
-      host = loadEngine(engine, (message) => this.update(projectId, { message }));
+      host = loadEngine(engine, (detail) => this.update(projectId, { detail }));
       host.catch(() => this.engines.delete(engine));
       this.engines.set(engine, host);
     }
@@ -134,11 +138,10 @@ export class CompileService {
     try {
       const result = await queue.request(async () => {
         const firstUse = !this.engines.has(project.engine);
-        if (firstUse)
-          this.update(project.id, { status: "initializing", message: "Loading engine" });
+        if (firstUse) this.update(project.id, { status: "initializing", detail: undefined });
         const host = await this.engine(project.engine, project.id);
         const snapshot = await this.snapshot(project.id);
-        this.update(project.id, { status: "compiling", message: "Compiling" });
+        this.update(project.id, { status: "compiling", detail: undefined });
         return host.compile({
           projectId: project.id,
           entry: project.entry,
@@ -152,7 +155,7 @@ export class CompileService {
       const message = error instanceof Error ? error.message : String(error);
       this.update(project.id, {
         status: "error",
-        message,
+        detail: message,
         diagnostics: [{ severity: "error", message, source: project.engine }],
         stale: this.getState(project.id).lastPdf !== undefined,
       });
@@ -166,7 +169,7 @@ export class CompileService {
   private publish(projectId: ProjectId, result: HostResult): void {
     const current = this.getState(projectId);
     if (result.status === "cancelled") {
-      this.update(projectId, { status: "cancelled", message: "Cancelled" });
+      this.update(projectId, { status: "cancelled", detail: undefined });
       return;
     }
     const common = {
@@ -178,7 +181,7 @@ export class CompileService {
       this.update(projectId, {
         ...common,
         status: "success",
-        message: "Built",
+        detail: undefined,
         stale: false,
         lastPdf: { bytes: result.pdf, builtAt: new Date(), snapshotKey: result.snapshotKey },
       });
@@ -188,7 +191,7 @@ export class CompileService {
     this.update(projectId, {
       ...common,
       status: "error",
-      message: `${result.diagnostics.filter((d) => d.severity === "error").length} error(s)`,
+      detail: undefined,
       stale: current.lastPdf !== undefined,
     });
   }

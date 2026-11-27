@@ -2,6 +2,7 @@ import type { OutlineNode } from "@qrtz/document-core";
 import { cn, Icon, ResizeSeparator } from "@qrtz/ui";
 import { ArrowRight01Icon } from "@qrtz/ui/icons";
 import { useState } from "react";
+import { useIntl } from "react-intl";
 import { useCollapsed } from "../../app/use-collapsed";
 import { useParentHeight } from "../../app/use-parent-height";
 import { useResizableSize } from "../../app/use-resizable-size";
@@ -23,6 +24,7 @@ export function OutlinePanel({
   readonly nodes: readonly OutlineNode[];
   readonly onSelect: (node: OutlineNode) => void;
 }) {
+  const intl = useIntl();
   const panel = useCollapsed("quartz:outline");
   const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
   const { ref, height: available } = useParentHeight();
@@ -60,7 +62,10 @@ export function OutlinePanel({
                 type="button"
                 className="pressable ml-1 flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md hover:bg-foreground/10"
                 aria-expanded={open}
-                aria-label={`${open ? "Collapse" : "Expand"} ${node.title}`}
+                aria-label={intl.formatMessage(
+                  { id: open ? "outline.collapse" : "outline.expand" },
+                  { title: node.title },
+                )}
                 onClick={() => toggle(key)}
               >
                 <Icon icon={ArrowRight01Icon} size={12} className={chevron(open)} />
@@ -77,13 +82,13 @@ export function OutlinePanel({
   return (
     <nav
       ref={ref}
-      aria-label="Document outline"
+      aria-label={intl.formatMessage({ id: "outline.label" })}
       className="relative flex shrink-0 flex-col border-t"
       style={panel.collapsed ? undefined : { height: size }}
     >
       {panel.collapsed ? null : (
         <ResizeSeparator
-          label="Resize outline"
+          label={intl.formatMessage({ id: "outline.resize" })}
           edge="top"
           value={size}
           min={limits.min}
@@ -100,11 +105,11 @@ export function OutlinePanel({
         onClick={panel.toggle}
       >
         <Icon icon={ArrowRight01Icon} size={14} className={chevron(!panel.collapsed)} />
-        Outline
+        {intl.formatMessage({ id: "outline.title" })}
       </button>
       {panel.collapsed ? null : nodes.length === 0 ? (
         <p className="px-4 pb-3 text-muted-foreground text-xs">
-          Headings of your document appear here.
+          {intl.formatMessage({ id: "outline.empty" })}
         </p>
       ) : (
         <ul className="min-h-0 overflow-auto px-2 pb-2">{renderNodes(nodes, 0, "")}</ul>

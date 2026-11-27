@@ -2,6 +2,7 @@ import type { CompilerDiagnostic } from "@qrtz/compiler-core";
 import { cn, Icon } from "@qrtz/ui";
 import { Alert02Icon, AlertCircleIcon } from "@qrtz/ui/icons";
 import { useState } from "react";
+import { useIntl } from "react-intl";
 
 export function ProblemsPanel({
   diagnostics,
@@ -12,12 +13,16 @@ export function ProblemsPanel({
   readonly log: string;
   readonly onSelect: (diagnostic: CompilerDiagnostic) => void;
 }) {
+  const intl = useIntl();
   const [tab, setTab] = useState<"problems" | "log">("problems");
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   const warnings = diagnostics.length - errors;
 
   return (
-    <section className="flex h-full flex-col border-t" aria-label="Problems and log">
+    <section
+      className="flex h-full flex-col border-t"
+      aria-label={intl.formatMessage({ id: "problems.label" })}
+    >
       <div className="flex h-9 shrink-0 items-center gap-1 px-2 text-xs" role="tablist">
         {(["problems", "log"] as const).map((id) => (
           <button
@@ -31,19 +36,29 @@ export function ProblemsPanel({
               tab === id && "bg-muted text-foreground",
             )}
           >
-            {id === "problems"
-              ? `Problems${diagnostics.length > 0 ? ` (${errors}/${warnings})` : ""}`
-              : "Log"}
+            {intl.formatMessage(
+              {
+                id:
+                  id === "log"
+                    ? "problems.log"
+                    : diagnostics.length > 0
+                      ? "problems.tab_count"
+                      : "problems.tab",
+              },
+              { errors, warnings },
+            )}
           </button>
         ))}
       </div>
       <div className="flex-1 overflow-auto px-2 pb-2 font-mono text-xs" role="tabpanel">
         {tab === "log" ? (
           <pre className="whitespace-pre-wrap text-muted-foreground">
-            {log === "" ? "No output." : log}
+            {log === "" ? intl.formatMessage({ id: "problems.no_output" }) : log}
           </pre>
         ) : diagnostics.length === 0 ? (
-          <p className="px-1 py-1 font-sans text-muted-foreground">No problems.</p>
+          <p className="px-1 py-1 font-sans text-muted-foreground">
+            {intl.formatMessage({ id: "problems.none" })}
+          </p>
         ) : (
           <ul>
             {diagnostics.map((diagnostic, index) => (

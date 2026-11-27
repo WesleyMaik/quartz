@@ -1,18 +1,12 @@
-import type { SkipReason, UploadPlan } from "@qrtz/document-core";
+import { MAX_UPLOAD_FILE_BYTES, type SkipReason, type UploadPlan } from "@qrtz/document-core";
 import { Button, Dialog, Icon } from "@qrtz/ui";
 import { Alert02Icon, File01Icon, Folder01Icon } from "@qrtz/ui/icons";
-import { formatBytes } from "../../lib/format";
+import { useIntl } from "react-intl";
+import { useFormat } from "../../app/use-format";
 
 const PREVIEW_COUNT = 6;
 /** Above this, the dialog reminds that everything is stored in this browser. */
 const LARGE_UPLOAD_BYTES = 50 * 1024 * 1024;
-
-const SKIP_LABELS: Record<SkipReason, string> = {
-  system_file: "system or hidden files",
-  invalid_path: "invalid names",
-  too_large: "larger than 100 MB",
-  duplicate: "already in the project",
-};
 
 /** Confirms a folder or multi-item upload before any file is written. */
 export function UploadConfirmDialog({
@@ -26,26 +20,30 @@ export function UploadConfirmDialog({
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }) {
+  const intl = useIntl();
+  const format = useFormat();
   const skippedByReason = new Map<SkipReason, number>();
   for (const item of plan?.skipped ?? []) {
     skippedByReason.set(item.reason, (skippedByReason.get(item.reason) ?? 0) + 1);
   }
   const count = plan?.uploads.length ?? 0;
-  const destination = folder === "" ? "the project root" : `${folder}/`;
 
   return (
     <Dialog
       open={plan !== undefined}
       onOpenChange={(open) => !open && onCancel()}
-      title={`Upload ${count} ${count === 1 ? "file" : "files"}?`}
-      description={`${formatBytes(plan?.totalBytes ?? 0)} will be added to ${destination}. Files are stored only in this browser.`}
+      title={intl.formatMessage({ id: "upload.title" }, { count })}
+      description={intl.formatMessage(
+        { id: folder === "" ? "upload.description_root" : "upload.description_folder" },
+        { size: format.bytes(plan?.totalBytes ?? 0), folder },
+      )}
       footer={
         <>
           <Button variant="outline" onClick={onCancel}>
-            Cancel
+            {intl.formatMessage({ id: "common.cancel" })}
           </Button>
           <Button onClick={onConfirm} disabled={count === 0}>
-            Upload
+            {intl.formatMessage({ id: "upload.confirm" })}
           </Button>
         </>
       }
@@ -68,29 +66,39 @@ export function UploadConfirmDialog({
             <li key={upload.path} className="flex items-center gap-2 text-muted-foreground">
               <Icon icon={File01Icon} size={13} className="shrink-0" />
               <span className="truncate">{upload.path}</span>
-              <span className="ml-auto shrink-0 tabular-nums">{formatBytes(upload.size)}</span>
+              <span className="ml-auto shrink-0 tabular-nums">{format.bytes(upload.size)}</span>
             </li>
           ))}
           {count > PREVIEW_COUNT ? (
-            <li className="pt-1 text-muted-foreground">and {count - PREVIEW_COUNT} more…</li>
+            <li className="pt-1 text-muted-foreground">
+              {intl.formatMessage({ id: "upload.more" }, { count: count - PREVIEW_COUNT })}
+            </li>
           ) : null}
         </ul>
         {skippedByReason.size === 0 ? null : (
           <p className="flex items-start gap-2 text-muted-foreground text-xs">
             <Icon icon={Alert02Icon} size={14} className="mt-px shrink-0 text-warning" />
             <span>
-              Skipped{" "}
-              {[...skippedByReason]
-                .map(([reason, total]) => `${total} ${SKIP_LABELS[reason]}`)
-                .join(", ")}
-              .
+              {intl.formatMessage(
+                { id: "upload.skipped" },
+                {
+                  items: intl.formatList(
+                    [...skippedByReason].map(([reason, total]) =>
+                      intl.formatMessage(
+                        { id: `upload.skip.${reason}` },
+                        { count: total, limit: format.bytes(MAX_UPLOAD_FILE_BYTES) },
+                      ),
+                    ),
+                    { type: "unit" },
+                  ),
+                },
+              )}
             </span>
           </p>
         )}
         {(plan?.totalBytes ?? 0) > LARGE_UPLOAD_BYTES ? (
           <p className="text-warning text-xs">
-            This is a large upload. Browsers can clear site data under storage pressure; export
-            backups of important projects.
+            {intl.formatMessage({ id: "upload.large_warning" })}
           </p>
         ) : null}
       </div>
