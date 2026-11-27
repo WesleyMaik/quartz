@@ -44,6 +44,14 @@ Desktop-first (≥ 1280 px primary, ≥ 1024 px supported, < 1024 px read-mostly
 - Drag and drop: move within tree; drop files from the OS to upload (validated with `parseProjectPath` and size limits).
 - Inline validation of names with the same path rules as import.
 
+### Outline
+
+Collapsible section below the file tree (and in the mobile files tab and drawer). It lists the headings of the document compiled from the entry file, following included files in document order; for a source the document does not include, it shows that file's own headings. Selecting a heading opens the file at its line. It updates on autosave.
+
+- LaTeX: `\part` to `\subparagraph` (starred included) and Beamer frame titles; `\input`, `\include`, `\subfile`, `\import` and `\subimport` are followed.
+- Typst: `=` headings and `#heading(...)[...]`; `#include` is followed.
+- List items, figures and headings produced by user-defined macros are not listed; sources are scanned, never compiled.
+
 ## 5. Editor
 
 - Tabs: open, close (Ctrl/Cmd+W), reorder, dirty dot, middle-click close, overflow menu. Restored after reload.

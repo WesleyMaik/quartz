@@ -50,6 +50,7 @@ Quartz takes the opposite approach:
 | LaTeX compilation (pdfLaTeX, XeLaTeX, BibTeX) with a self-hosted TeX Live 2026 runtime | ✅         |
 | Diagnostics mapped to file and line, compile log, last successful PDF preserved        | ✅         |
 | PDF preview with zoom, page navigation, text selection and download                    | ✅         |
+| Document outline across included files, with jump to heading                           | ✅         |
 | First-page thumbnails in the project list                                              | ✅         |
 | Light and dark themes                                                                  | ✅         |
 | Download a project as a standard ZIP                                                   | ✅         |
