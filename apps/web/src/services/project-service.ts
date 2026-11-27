@@ -13,6 +13,7 @@ import {
   type Result,
 } from "@qrtz/document-core";
 import {
+  createBundleZip,
   createProjectZip,
   type ProjectArchiveContents,
   projectArchiveName,
@@ -124,6 +125,33 @@ export class ProjectService {
       });
       return ok({
         fileName: projectArchiveName(project.title),
+        blob: new Blob([bytes], { type: "application/zip" }),
+      });
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : String(cause);
+      return err(quartzError("archive.export_failed", `Export failed: ${reason}`));
+    }
+  }
+
+  /** One ZIP holding the archive of every project. Fails as a whole, never skipping a project. */
+  async exportAll(now = new Date()): Promise<Result<ProjectArchive, QuartzError>> {
+    try {
+      const all = await this.projects.list();
+      if (all.length === 0) {
+        return err(quartzError("project.not_found", "There are no projects to export."));
+      }
+      const entries = [];
+      for (const project of all) {
+        const archive = await this.exportZip(project);
+        if (!archive.ok) return archive;
+        entries.push({
+          name: archive.value.fileName,
+          data: new Uint8Array(await archive.value.blob.arrayBuffer()),
+        });
+      }
+      const bytes = await createBundleZip(entries, now);
+      return ok({
+        fileName: `quartz-projects-${now.toISOString().slice(0, 10)}.zip`,
         blob: new Blob([bytes], { type: "application/zip" }),
       });
     } catch (cause) {

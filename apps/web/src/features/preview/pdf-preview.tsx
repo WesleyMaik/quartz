@@ -1,16 +1,19 @@
-import { Button, Icon } from "@qrtz/ui";
+import { Button, cn, Icon } from "@qrtz/ui";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   Download04Icon,
   File01Icon,
+  InformationCircleIcon,
   MinusSignIcon,
   PlusSignIcon,
 } from "@qrtz/ui/icons";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useSettings } from "../../app/settings";
 import { downloadBlob } from "../../lib/download";
 import { getDocument, type PDFDocumentLoadingTask } from "../../lib/pdfjs";
 import { EventBus, PDFLinkService, PDFViewer } from "../../lib/pdfjs-viewer";
+import type { PdfDetails } from "./document-info";
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 4;
@@ -21,19 +24,44 @@ export interface PdfPreviewProps {
   /** Shown over the preview, for example "Showing last successful build". */
   readonly notice: string | undefined;
   readonly emptyMessage: string;
+  /** Content of the Info view, which replaces the pages while it is open. */
+  readonly renderInfo: (details: PdfDetails | undefined) => ReactNode;
+}
+
+type LoadedPdf = Awaited<PDFDocumentLoadingTask["promise"]>;
+
+const textOf = (value: unknown): string | undefined =>
+  typeof value === "string" && value !== "" ? value : undefined;
+
+async function readDetails(pdf: LoadedPdf): Promise<PdfDetails> {
+  const [page, metadata] = await Promise.all([pdf.getPage(1), pdf.getMetadata()]);
+  const { width, height } = page.getViewport({ scale: 1 });
+  // Metadata comes from the compiled file, so every value is checked.
+  const info = metadata.info as Readonly<Record<string, unknown>>;
+  return {
+    pages: pdf.numPages,
+    pageWidth: width,
+    pageHeight: height,
+    version: textOf(info.PDFFormatVersion),
+    producer: textOf(info.Producer),
+  };
 }
 
 /**
  * PDF.js viewer with text layer (selection, search via Ctrl+F of the browser), zoom and page
  * navigation. Scripting and eval are disabled because compiled PDFs come from untrusted input.
  */
-export function PdfPreview({ bytes, fileName, notice, emptyMessage }: PdfPreviewProps) {
+export function PdfPreview({ bytes, fileName, notice, emptyMessage, renderInfo }: PdfPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<PDFViewer | undefined>(undefined);
   /** PDF.js 6 releases a document through its loading task. */
   const taskRef = useRef<PDFDocumentLoadingTask | undefined>(undefined);
   const [page, setPage] = useState({ current: 0, total: 0 });
   const [scale, setScale] = useState<number | undefined>();
+  const [details, setDetails] = useState<PdfDetails | undefined>();
+  const [showInfo, setShowInfo] = useState(false);
+  const darkPages = useSettings((settings) => settings.pdfDarkMode);
+  const zoomShortcuts = useSettings((settings) => settings.pdfZoomShortcuts);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -83,6 +111,12 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage }: PdfPreview
         viewer.setDocument(pdf);
         taskRef.current = task;
         void previous?.destroy();
+        void readDetails(pdf).then(
+          (next) => {
+            if (!cancelled) setDetails(next);
+          },
+          () => undefined,
+        );
       },
       () => undefined,
     );
@@ -106,6 +140,27 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage }: PdfPreview
     );
   };
 
+  useEffect(() => {
+    // While the Info view is open the shortcuts keep zooming the browser.
+    if (!zoomShortcuts || showInfo) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const viewer = viewerRef.current;
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (viewer === undefined || viewer.pagesCount === 0) return;
+      const factor = event.key === "+" || event.key === "=" ? 1.15 : 1 / 1.15;
+      if (event.key === "0") viewer.currentScaleValue = "page-width";
+      else if (event.key === "+" || event.key === "=" || event.key === "-") {
+        viewer.currentScale = Math.min(
+          MAX_SCALE,
+          Math.max(MIN_SCALE, viewer.currentScale * factor),
+        );
+      } else return;
+      event.preventDefault();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [zoomShortcuts, showInfo]);
+
   const download = () => {
     if (bytes === undefined) return;
     downloadBlob(new Blob([bytes.slice()], { type: "application/pdf" }), fileName);
@@ -116,12 +171,27 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage }: PdfPreview
       <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3 text-xs">
         <span className="truncate font-medium text-sm">{fileName}</span>
         <div className="flex-1" />
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-pressed={showInfo}
+          className={cn(showInfo && "bg-muted")}
+          onClick={() => setShowInfo((value) => !value)}
+        >
+          <Icon icon={InformationCircleIcon} size={14} /> Info
+        </Button>
         <Button variant="ghost" size="sm" onClick={download} disabled={bytes === undefined}>
           <Icon icon={Download04Icon} size={14} /> Download
         </Button>
       </div>
       <div className="relative flex-1">
-        <div ref={containerRef} className="quartz-pdf-container" data-testid="pdf-container">
+        <div
+          ref={containerRef}
+          className={cn("quartz-pdf-container", darkPages && "quartz-pdf-dark")}
+          data-testid="pdf-container"
+          // The pages stay mounted underneath, so zoom and scroll position survive.
+          inert={showInfo}
+        >
           <div className="pdfViewer" />
         </div>
         {bytes === undefined ? (
@@ -175,6 +245,11 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage }: PdfPreview
             </Button>
           </div>
         )}
+        {showInfo ? (
+          <div className="fade-in absolute inset-0 animate-in bg-card duration-200">
+            {renderInfo(details)}
+          </div>
+        ) : null}
       </div>
     </section>
   );

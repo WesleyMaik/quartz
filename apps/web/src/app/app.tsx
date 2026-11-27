@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { DashboardPage } from "../features/dashboard/dashboard-page";
 import { ProjectLoadingScreen } from "../features/shared/project-loading-screen";
 import { type Services, ServicesProvider } from "./services";
+import { useSystemThemeSync } from "./theme";
 
 // The workspace pulls in CodeMirror and PDF.js; load it only when a project opens.
 const WorkspacePage = lazy(() =>
@@ -29,6 +30,7 @@ const router = createBrowserRouter(
 );
 
 export function App({ services }: { services: Services }) {
+  useSystemThemeSync();
   return (
     <ServicesProvider services={services}>
       <RouterProvider router={router} />

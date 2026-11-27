@@ -1,6 +1,7 @@
 import type { CompilerDiagnostic } from "@qrtz/compiler-core";
 import type { ProjectId, ProjectPath } from "@qrtz/document-core";
 import {
+  applyEditorPreferences,
   createEditorState,
   type EditorState,
   EditorView,
@@ -12,6 +13,7 @@ import { toast } from "@qrtz/ui";
 import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useServices } from "../../app/services";
 import { formatBytes } from "../../lib/format";
+import { useEditorPreferences } from "./use-editor-preferences";
 
 const AUTOSAVE_DELAY_MS = 750;
 
@@ -65,6 +67,9 @@ export function EditorPane({
     undefined,
   );
   const [binary, setBinary] = useState<BinaryView | undefined>();
+  const preferences = useEditorPreferences();
+  const preferencesRef = useRef(preferences);
+  preferencesRef.current = preferences;
   const callbacks = useRef({ onSaved, onDirtyChange, onCompileShortcut });
   callbacks.current = { onSaved, onDirtyChange, onCompileShortcut };
 
@@ -156,7 +161,12 @@ export function EditorPane({
     setBinary(undefined);
     if (path === undefined) {
       view.setState(
-        createEditorState({ doc: "", language: "plain", onDocChange: () => undefined }),
+        createEditorState({
+          doc: "",
+          language: "plain",
+          preferences: preferencesRef.current,
+          onDocChange: () => undefined,
+        }),
       );
       return;
     }
@@ -184,6 +194,7 @@ export function EditorPane({
           state: createEditorState({
             doc: text,
             language: languageForPath(path),
+            preferences: preferencesRef.current,
             extraKeys: [
               {
                 key: "Mod-s",
@@ -215,6 +226,8 @@ export function EditorPane({
         session = created;
       }
       view.setState(session.state);
+      // A state kept from earlier may predate the latest preference change.
+      applyEditorPreferences(view, preferencesRef.current);
       view.focus();
       shownPath.current = path;
       if (pendingReveal.current?.path === path) {
@@ -231,6 +244,10 @@ export function EditorPane({
       if (session !== undefined && activePath.current === path) session.state = view.state;
     };
   }, [path, files, projectId, save]);
+
+  useEffect(() => {
+    if (viewRef.current !== undefined) applyEditorPreferences(viewRef.current, preferences);
+  }, [preferences]);
 
   useEffect(() => {
     const view = viewRef.current;

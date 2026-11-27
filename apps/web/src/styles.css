@@ -8,6 +8,10 @@
   overflow: auto;
   background: var(--muted);
 }
+.quartz-pdf-dark .pdfViewer .page {
+  /* Inverts lightness while keeping hues, so coloured figures stay recognisable. */
+  filter: invert(0.9) hue-rotate(180deg);
+}
 .quartz-pdf-container .pdfViewer {
   padding-bottom: 72px;
 }

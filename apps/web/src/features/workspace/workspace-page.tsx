@@ -6,11 +6,14 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useParams } from "react-router";
 import { useServices } from "../../app/services";
+import { useSettings } from "../../app/settings";
 import { useDocumentTitle } from "../../app/use-document-title";
 import { MOBILE_QUERY, useMediaQuery } from "../../app/use-media-query";
 import { useSidebar } from "../../app/use-sidebar";
 import { formatTime } from "../../lib/format";
+import { DocumentInfo } from "../preview/document-info";
 import { PdfPreview } from "../preview/pdf-preview";
+import { SettingsButton } from "../settings/settings-button";
 import { exportProject } from "../shared/export-project";
 import { ProjectLoadingScreen } from "../shared/project-loading-screen";
 import { EditorPane, type EditorPaneHandle } from "./editor-pane";
@@ -67,7 +70,8 @@ function Workspace({ project }: { readonly project: Project }) {
   const [tabs, setTabs] = useState<ProjectPath[]>([]);
   const [active, setActive] = useState<ProjectPath | undefined>();
   const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
-  const [autoCompile, setAutoCompile] = useState(true);
+  const autoCompile = useSettings((settings) => settings.autoCompile);
+  const updateSettings = useSettings((settings) => settings.update);
   const [restored, setRestored] = useState(false);
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const [mobileTab, setMobileTab] = useState<MobileTab>("editor");
@@ -139,6 +143,9 @@ function Workspace({ project }: { readonly project: Project }) {
   }, [autoCompile, compiler]);
 
   useEffect(() => () => clearTimeout(autoTimer.current), []);
+  useEffect(() => {
+    if (!autoCompile) clearTimeout(autoTimer.current);
+  }, [autoCompile]);
 
   const onDirtyChange = useCallback((path: string, isDirty: boolean) => {
     setDirty((current) => {
@@ -199,24 +206,29 @@ function Workspace({ project }: { readonly project: Project }) {
 
   const explorer = (onOpen: (path: ProjectPath) => void) => (
     <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1">
-        <FileExplorer
-          project={project}
-          entries={entries ?? []}
-          activePath={active}
-          dirtyPaths={dirty}
-          onOpen={onOpen}
-          onRenamed={onRenamed}
-          onDeleted={onDeleted}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1">
+          <FileExplorer
+            project={project}
+            entries={entries ?? []}
+            activePath={active}
+            dirtyPaths={dirty}
+            onOpen={onOpen}
+            onRenamed={onRenamed}
+            onDeleted={onDeleted}
+          />
+        </div>
+        <OutlinePanel
+          nodes={outline}
+          onSelect={(node) => {
+            onOpen(node.file);
+            editorRef.current?.reveal(node.file, node.line);
+          }}
         />
       </div>
-      <OutlinePanel
-        nodes={outline}
-        onSelect={(node) => {
-          onOpen(node.file);
-          editorRef.current?.reveal(node.file, node.line);
-        }}
-      />
+      <div className="shrink-0 border-t px-2 py-1.5">
+        <SettingsButton />
+      </div>
     </div>
   );
   const editor = (
@@ -242,6 +254,7 @@ function Workspace({ project }: { readonly project: Project }) {
       bytes={compileState.lastPdf?.bytes}
       fileName={`${entryStem}.pdf`}
       notice={notice}
+      renderInfo={(pdf) => <DocumentInfo project={project} compileState={compileState} pdf={pdf} />}
       emptyMessage={
         compileState.status === "initializing"
           ? "Loading the compiler. The first build downloads the engine once."
@@ -261,7 +274,7 @@ function Workspace({ project }: { readonly project: Project }) {
         saveStatus={saveStatus}
         compileState={compileState}
         autoCompile={autoCompile}
-        onToggleAutoCompile={() => setAutoCompile((value) => !value)}
+        onToggleAutoCompile={() => updateSettings({ autoCompile: !autoCompile })}
         onCompile={() => void compileNow()}
         onCancel={() => compiler.cancel(project)}
         onExport={() => void exportNow()}

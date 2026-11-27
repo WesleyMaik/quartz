@@ -27,6 +27,7 @@ import { useServices } from "../../app/services";
 import { useTheme } from "../../app/theme";
 import { useSidebar } from "../../app/use-sidebar";
 import { formatBytes, formatRelative } from "../../lib/format";
+import { SettingsButton } from "../settings/settings-button";
 import { ConfirmDialog } from "../shared/confirm-dialog";
 import { exportProject } from "../shared/export-project";
 import { PromptDialog } from "../shared/prompt-dialog";
@@ -251,6 +252,9 @@ export function DashboardPage() {
                 : "Storage may be cleared by the browser. Clearing site data deletes projects."}
             </p>
           </div>
+          <div className="-mt-4">
+            <SettingsButton />
+          </div>
         </div>
       </aside>
 
@@ -265,19 +269,23 @@ export function DashboardPage() {
             <QuartzLogo size={26} />
             Quartz
           </div>
-          <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
-            <Icon
-              key={theme}
-              icon={theme === "dark" ? Sun03Icon : Moon02Icon}
-              className="fade-in spin-in-45 animate-in duration-300"
-            />
-          </Button>
+          <div className="flex items-center">
+            <SettingsButton compact />
+            <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggle}>
+              <Icon
+                key={theme}
+                icon={theme === "dark" ? Sun03Icon : Moon02Icon}
+                className="fade-in spin-in-45 animate-in duration-300"
+              />
+            </Button>
+          </div>
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-card md:rounded-xl md:border md:shadow-sm">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 md:h-16 md:gap-3 md:px-6">
             {sidebar.collapsed ? (
               <div className="fade-in slide-in-from-left-2 -ml-2 flex animate-in items-center gap-1 duration-300 max-md:hidden">
                 <SidebarToggle collapsed onToggle={sidebar.toggle} />
+                <SettingsButton compact />
                 <QuartzLogo size={24} className="mr-1" />
               </div>
             ) : null}

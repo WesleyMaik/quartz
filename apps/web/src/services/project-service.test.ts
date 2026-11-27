@@ -69,3 +69,33 @@ describe("ProjectService import", () => {
     expect(draft.ok ? "ok" : draft.error.code).toBe("archive.invalid");
   });
 });
+
+describe("ProjectService exportAll", () => {
+  const project = (title: string) => ({
+    id: title,
+    title,
+    updatedAt: "2026-11-27T12:00:00.000Z",
+  });
+
+  const service = (projects: readonly unknown[]) =>
+    new ProjectService(
+      { list: async () => projects } as unknown as ProjectRepository,
+      {
+        snapshot: async () => [text("main.typ", "= A")],
+        listTree: async () => [],
+      } as unknown as FileRepository,
+      async () => err(quartzError("archive.invalid", "unused")),
+    );
+
+  it("names the bundle after the export date", async () => {
+    const result = await service([project("A"), project("B")]).exportAll(
+      new Date("2026-11-28T00:00:00.000Z"),
+    );
+    expect(result.ok && result.value.fileName).toBe("quartz-projects-2026-11-28.zip");
+  });
+
+  it("reports that there is nothing to export", async () => {
+    const result = await service([]).exportAll();
+    expect(result.ok ? "ok" : result.error.code).toBe("project.not_found");
+  });
+});
