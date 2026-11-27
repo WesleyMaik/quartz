@@ -8,3 +8,4 @@ export {
   showDiagnostics,
 } from "./create-editor";
 export { type EditorLanguage, languageForPath } from "./languages";
+export { applyEditorPreferences, type EditorPreferences } from "./preferences";

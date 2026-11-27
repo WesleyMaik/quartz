@@ -16,6 +16,7 @@ import {
   rectangularSelection,
 } from "@codemirror/view";
 import { type EditorLanguage, languageExtension } from "./languages";
+import { type EditorPreferences, preferencesExtension } from "./preferences";
 import { quartzTheme } from "./theme";
 
 export interface EditorDiagnostic {
@@ -29,6 +30,7 @@ export interface EditorDiagnostic {
 export interface CreateEditorStateOptions {
   readonly doc: string;
   readonly language: EditorLanguage;
+  readonly preferences: EditorPreferences;
   readonly onDocChange: (doc: string) => void;
   readonly extraKeys?: Parameters<typeof keymap.of>[0];
 }
@@ -49,7 +51,6 @@ const baseExtensions: Extension = [
   highlightActiveLine(),
   highlightSelectionMatches(),
   lintGutter(),
-  EditorView.lineWrapping,
   quartzTheme,
 ];
 
@@ -59,6 +60,7 @@ export function createEditorState(options: CreateEditorStateOptions): EditorStat
     doc: options.doc,
     extensions: [
       baseExtensions,
+      preferencesExtension(options.preferences),
       languageExtension(options.language),
       keymap.of([
         ...(options.extraKeys ?? []),
