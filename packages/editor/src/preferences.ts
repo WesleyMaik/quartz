@@ -1,4 +1,4 @@
-import { Compartment, type Extension, Prec } from "@codemirror/state";
+import { Compartment, EditorState, type Extension, Prec } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 
 /** Editor options the user can change while files are open. */
@@ -8,11 +8,14 @@ export interface EditorPreferences {
   readonly lineWrapping: boolean;
   /** The browser's own spell checker, including its personal dictionary. */
   readonly spellCheck: boolean;
+  /** Translations of CodeMirror's built-in strings, keyed by the English phrase. */
+  readonly phrases: Readonly<Record<string, string>>;
 }
 
 const compartment = new Compartment();
 
 const extensionsFor = (preferences: EditorPreferences): Extension => [
+  EditorState.phrases.of(preferences.phrases),
   preferences.lineWrapping ? EditorView.lineWrapping : [],
   EditorView.contentAttributes.of({ spellcheck: String(preferences.spellCheck) }),
   // Above the base theme, which sets the default size.
