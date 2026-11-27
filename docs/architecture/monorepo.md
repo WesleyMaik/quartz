@@ -21,6 +21,7 @@ quartz/
 ├── packages/
 │   ├── ui/                      # shadcn (Base UI) + Smooth UI components, tokens, theme
 │   ├── document-core/           # pure domain: models, paths, engine detection, zod schemas
+│   ├── messages/                # interface translations: locales and ICU catalogs
 │   ├── project-format/          # standard ZIP export and import
 │   ├── storage/                 # Dexie database, repositories, quota helpers
 │   ├── editor/                  # CodeMirror 6 setup, language extensions (latex/, typst/)
@@ -65,6 +66,7 @@ Package count: 9 packages + 1 app + e2e. **[REC]** If this still feels heavy dur
 document-core  ◄── project-format, storage, compiler-core, agent-bridge, editor
 compiler-core  ◄── compiler-latex, compiler-typst
 ui             (no internal deps)
+messages       (no internal deps)
 apps/web       ──► everything
 ```
 

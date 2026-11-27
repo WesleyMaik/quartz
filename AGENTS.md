@@ -22,6 +22,7 @@ Quartz is a browser-only, local-first scientific writing workspace for LaTeX and
 apps/web               composition root, React features, application services
 packages/ui            shadcn/ui (Base UI) + Smooth UI components, theme; React only, no domain imports
 packages/document-core pure domain: models, paths, detection, templates; depends only on zod
+packages/messages      interface translations (ICU JSON catalogs); no dependencies, no React
 packages/project-format standard ZIP import/export; depends on document-core, fflate
 packages/storage       Dexie database and repositories; depends on document-core
 packages/editor        CodeMirror 6 setup and language extensions; no React
@@ -39,6 +40,7 @@ Rules:
 - Engine packages are loaded only via dynamic `import()` from the compile service.
 - No circular dependencies. Allowed edges are listed in [docs/architecture/monorepo.md](docs/architecture/monorepo.md).
 - Business logic lives in services and packages, never in React components.
+- Only `apps/web` imports `@qrtz/messages`. Domain packages report errors as `QuartzError` keys and values, never as translated text.
 - One owner per state: Dexie for domain data, Zustand only for UI state.
 
 ## Naming conventions
@@ -67,6 +69,7 @@ Rules:
 
 ## UI rules
 
+- Interface text goes through react-intl with an id in every catalog of `packages/messages`; never hard-code user-facing strings. See [ADR-007](docs/decisions/ADR-007-internationalization.md).
 - Primitives come from `packages/ui` (shadcn on Base UI). Do not add Radix packages or another primitive library.
 - Smooth UI components are installed with `pnpm dlx shadcn@latest add @smoothui/<name> -c packages/ui` and then adapted (HugeIcons instead of lucide).
 - Icons: HugeIcons only.
@@ -94,7 +97,7 @@ Rules:
 - Commit after every successful implementation step (lint, typecheck and relevant tests passing).
 - Use Conventional Commits with a scope: `<type>(<scope>): <subject>`, for example `feat(storage): add dexie repositories`.
 - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`, `ci`, `perf`, `style`.
-- Scope is the package or area: `document-core`, `storage`, `editor`, `ui`, `web`, `project-format`, `compiler-core`, `compiler-typst`, `compiler-latex`, `agent-bridge`, `repo`, `docs`.
+- Scope is the package or area: `document-core`, `messages`, `storage`, `editor`, `ui`, `web`, `project-format`, `compiler-core`, `compiler-typst`, `compiler-latex`, `agent-bridge`, `repo`, `docs`.
 - Subject: short, clear, imperative, lowercase, English, no trailing period. No body.
 - Group files of the same scope into the same commit; keep each commit cohesive and split by scope.
 - Never commit secrets, build output or downloaded engine assets.
@@ -124,5 +127,6 @@ Runtime assets live in `apps/web/public/engines/` (gitignored). Playwright E2E i
 | Compilers     | Adapters in dedicated workers; typst.ts for Typst; LaTeX engine chosen in Spike 1 | [ADR-004](docs/decisions/ADR-004-compiler-architecture.md) |
 | Agents        | WebMCP via `document.modelContext`; staged change sets; activity panel, not chat  | [ADR-005](docs/decisions/ADR-005-agent-integration.md)     |
 | UI primitives | shadcn/ui on Base UI + Smooth UI                                                  | [ADR-006](docs/decisions/ADR-006-ui-primitives.md)         |
+| Languages     | react-intl with catalogs in `@qrtz/messages`; UI text is localized, English first | [ADR-007](docs/decisions/ADR-007-internationalization.md)  |
 
 When an implementation choice conflicts with these documents, stop and update the relevant ADR first, explaining why.

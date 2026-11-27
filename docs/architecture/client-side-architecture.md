@@ -77,5 +77,5 @@ Cache Storage holds only re-downloadable assets; it is never a source of truth f
 ## 9. Error handling conventions
 
 - Services return `Result<T, QuartzError>` for expected failures (validation, quota, not found, conflict) and throw only for programmer errors.
-- `QuartzError` is a discriminated union with `code` (e.g. `"storage.quota_exceeded"`, `"path.invalid"`, `"archive.export_failed"`), a user-facing message key and optional details.
+- `QuartzError` is a discriminated union with `code` (e.g. `"storage.quota_exceeded"`, `"path.invalid"`, `"archive.export_failed"`), an English `message`, a translation `key` and optional `values` (see [ADR-007](../decisions/ADR-007-internationalization.md)).
 - The UI maps codes to toasts or inline errors; agent tools map them to structured tool errors.
