@@ -35,7 +35,7 @@ const fail = (reason: PathErrorReason, input: string): Result<never, PathError> 
 
 /**
  * The single validator for every path entering Quartz: UI input, archive entries, agent tools.
- * Rules: docs/specifications/qrtz-format.md §7.
+ * Rules: docs/specifications/project-archive.md §3.
  */
 export function parseProjectPath(input: string): Result<ProjectPath, PathError> {
   if (input.length === 0) return fail("empty", input);

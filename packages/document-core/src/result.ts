@@ -16,7 +16,8 @@ export type QuartzErrorCode =
   | "storage.quota_exceeded"
   | "storage.unavailable"
   | "storage.failed"
-  | "upload.limit_exceeded";
+  | "upload.limit_exceeded"
+  | "archive.export_failed";
 
 export interface QuartzError {
   readonly code: QuartzErrorCode;
