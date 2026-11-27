@@ -15,7 +15,9 @@ import { exportProject } from "../shared/export-project";
 import { ProjectLoadingScreen } from "../shared/project-loading-screen";
 import { EditorPane, type EditorPaneHandle } from "./editor-pane";
 import { FileExplorer } from "./file-explorer";
+import { OutlinePanel } from "./outline-panel";
 import { ProblemsPanel } from "./problems-panel";
+import { useOutline } from "./use-outline";
 import { type SaveStatus, WorkspaceHeader } from "./workspace-header";
 
 const AUTO_COMPILE_DELAY_MS = { typst: 600, latex: 2500 } as const;
@@ -179,10 +181,7 @@ function Workspace({ project }: { readonly project: Project }) {
     if (diagnostic.file === undefined) return;
     const path = diagnostic.file as ProjectPath;
     open(path);
-    if (diagnostic.line !== undefined) {
-      const line = diagnostic.line;
-      setTimeout(() => editorRef.current?.reveal(line), 50);
-    }
+    if (diagnostic.line !== undefined) editorRef.current?.reveal(path, diagnostic.line);
   };
 
   const saveStatus: SaveStatus = dirty.size > 0 ? "unsaved" : "saved";
@@ -195,16 +194,29 @@ function Workspace({ project }: { readonly project: Project }) {
   );
   const entryStem = project.entry.slice(project.entry.lastIndexOf("/") + 1).replace(/\.[^.]+$/, "");
 
+  const outline = useOutline(project.id, project.entry, active);
+
   const explorer = (onOpen: (path: ProjectPath) => void) => (
-    <FileExplorer
-      project={project}
-      entries={entries ?? []}
-      activePath={active}
-      dirtyPaths={dirty}
-      onOpen={onOpen}
-      onRenamed={onRenamed}
-      onDeleted={onDeleted}
-    />
+    <div className="flex h-full flex-col">
+      <div className="min-h-0 flex-1">
+        <FileExplorer
+          project={project}
+          entries={entries ?? []}
+          activePath={active}
+          dirtyPaths={dirty}
+          onOpen={onOpen}
+          onRenamed={onRenamed}
+          onDeleted={onDeleted}
+        />
+      </div>
+      <OutlinePanel
+        nodes={outline}
+        onSelect={(node) => {
+          onOpen(node.file);
+          editorRef.current?.reveal(node.file, node.line);
+        }}
+      />
+    </div>
   );
   const editor = (
     <EditorPane

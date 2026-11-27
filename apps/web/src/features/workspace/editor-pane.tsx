@@ -25,7 +25,8 @@ interface Session {
 export interface EditorPaneHandle {
   /** Writes every dirty buffer to storage. */
   flush(): Promise<void>;
-  reveal(line: number): void;
+  /** Moves to `line` of `path`, now or as soon as that file is shown. */
+  reveal(path: string, line: number): void;
   /** Drops cached buffers for paths that no longer exist. */
   forget(path: string): void;
 }
@@ -58,6 +59,11 @@ export function EditorPane({
   const viewRef = useRef<EditorView | undefined>(undefined);
   const sessions = useRef(new Map<string, Session>());
   const activePath = useRef<string | undefined>(undefined);
+  /** The file whose text is in the view; lags behind `path` while it loads. */
+  const shownPath = useRef<string | undefined>(undefined);
+  const pendingReveal = useRef<{ readonly path: string; readonly line: number } | undefined>(
+    undefined,
+  );
   const [binary, setBinary] = useState<BinaryView | undefined>();
   const callbacks = useRef({ onSaved, onDirtyChange, onCompileShortcut });
   callbacks.current = { onSaved, onDirtyChange, onCompileShortcut };
@@ -101,8 +107,14 @@ export function EditorPane({
     ref,
     () => ({
       flush,
-      reveal: (line) => {
-        if (viewRef.current !== undefined) revealLine(viewRef.current, line);
+      reveal: (filePath, line) => {
+        const view = viewRef.current;
+        if (view !== undefined && shownPath.current === filePath) {
+          pendingReveal.current = undefined;
+          revealLine(view, line);
+        } else {
+          pendingReveal.current = { path: filePath, line };
+        }
       },
       forget: (filePath) => {
         const session = sessions.current.get(filePath);
@@ -140,6 +152,7 @@ export function EditorPane({
     let cancelled = false;
     let objectUrl: string | undefined;
     activePath.current = path;
+    shownPath.current = undefined;
     setBinary(undefined);
     if (path === undefined) {
       view.setState(
@@ -203,6 +216,11 @@ export function EditorPane({
       }
       view.setState(session.state);
       view.focus();
+      shownPath.current = path;
+      if (pendingReveal.current?.path === path) {
+        revealLine(view, pendingReveal.current.line);
+        pendingReveal.current = undefined;
+      }
     };
     void open();
 
