@@ -142,7 +142,7 @@ export function WorkspaceHeader({
       </div>
       <Button variant="ghost" size="sm" onClick={onExport} title="Download project as ZIP">
         <Icon icon={Download04Icon} size={14} />
-        <span className="max-md:sr-only">ZIP</span>
+        <span className="max-md:sr-only">Export (zip)</span>
       </Button>
       {busy ? (
         <Button variant="outline" size="sm" onClick={onCancel}>
