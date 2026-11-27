@@ -8,6 +8,7 @@ import {
   ok,
   type Project,
   type ProjectId,
+  type ProjectPath,
   type QuartzError,
   quartzError,
   type Result,
@@ -42,10 +43,11 @@ export class ProjectRepository {
     return this.db.projects.get(id);
   }
 
-  /** Creates a project and all its files in one transaction. */
+  /** Creates a project with its files and folder entries in one transaction. */
   async create(
     input: NewProject,
     files: readonly NewFile[],
+    folders: readonly ProjectPath[] = [],
   ): Promise<Result<Project, QuartzError>> {
     const now = new Date().toISOString();
     const project: Project = { ...input, id: newProjectId(), createdAt: now, updatedAt: now };
@@ -67,6 +69,17 @@ export class ProjectRepository {
           ? { fileId: id, kind: "text", text: file.content.text }
           : { fileId: id, kind: "binary", bytes: file.content.bytes },
       );
+    }
+    for (const path of folders) {
+      entries.push({
+        id: newFileId(),
+        projectId: project.id,
+        path,
+        kind: "folder",
+        size: 0,
+        revision: 1,
+        updatedAt: now,
+      });
     }
     try {
       await this.db.transaction(
@@ -122,7 +135,8 @@ export class ProjectRepository {
       });
     });
     const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = source;
-    const created = await this.create({ ...rest, title }, files);
+    const folders = entries.filter((entry) => entry.kind === "folder").map((entry) => entry.path);
+    const created = await this.create({ ...rest, title }, files, folders);
     if (created.ok) await this.copyThumbnail(id, created.value.id);
     return created;
   }

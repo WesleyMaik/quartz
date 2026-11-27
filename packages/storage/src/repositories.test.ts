@@ -50,6 +50,21 @@ describe("ProjectRepository", () => {
     ]);
   });
 
+  it("keeps folder entries on create and duplicate", async () => {
+    const created = await projects.create(
+      { title: "Paper", engine: "typst", entry: path("main.typ"), compiler: { engine: "typst" } },
+      [text("main.typ", "= Hi")],
+      [path("empty")],
+    );
+    if (!created.ok) throw new Error(created.error.message);
+    const copy = await projects.duplicate(created.value.id, "Copy");
+    if (!copy.ok) throw new Error(copy.error.message);
+    for (const id of [created.value.id, copy.value.id]) {
+      const tree = await files.listTree(id);
+      expect(tree.map((f) => [f.path, f.kind])).toContainEqual(["empty", "folder"]);
+    }
+  });
+
   it("sums stored bytes per project", async () => {
     const first = await createProject();
     const second = await projects.create(
