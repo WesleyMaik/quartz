@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { projectArchiveName } from "./archive-name";
+import { projectArchiveName, projectTitleFromArchive } from "./archive-name";
 
 describe("projectArchiveName", () => {
   it("keeps readable titles, including non-ASCII ones", () => {
@@ -20,5 +20,15 @@ describe("projectArchiveName", () => {
     [101, 100],
   ])("limits a %i character title to %i", (length, expected) => {
     expect(projectArchiveName("a".repeat(length))).toBe(`${"a".repeat(expected)}.zip`);
+  });
+});
+
+describe("projectTitleFromArchive", () => {
+  it.each([
+    ["Thesis v2.zip", "Thesis v2"],
+    ["PAPER.ZIP", "PAPER"],
+    [".zip", "Imported project"],
+  ])("turns %j into %j", (fileName, title) => {
+    expect(projectTitleFromArchive(fileName)).toBe(title);
   });
 });

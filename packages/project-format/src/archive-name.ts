@@ -16,3 +16,9 @@ export function projectArchiveName(title: string): string {
   const safe = stem === "" || RESERVED_NAMES.test(stem) ? FALLBACK_STEM : stem;
   return `${safe}.zip`;
 }
+
+/** Project title suggested by an imported archive's file name. */
+export function projectTitleFromArchive(fileName: string): string {
+  const title = fileName.replace(/\.zip$/i, "").trim();
+  return title === "" ? "Imported project" : title;
+}
