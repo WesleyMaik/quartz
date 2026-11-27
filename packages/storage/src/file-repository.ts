@@ -127,9 +127,13 @@ export class FileRepository {
         return next;
       });
       if (updated === undefined)
-        return err(quartzError("path.not_found", `${path} does not exist.`));
+        return err(quartzError("path.not_found", `${path} does not exist.`, { values: { path } }));
       if (updated === "conflict") {
-        return err(quartzError("revision.conflict", `${path} changed since it was read.`));
+        return err(
+          quartzError("revision.conflict", `${path} changed since it was read.`, {
+            values: { path },
+          }),
+        );
       }
       return ok(updated);
     } catch (cause) {
@@ -145,7 +149,11 @@ export class FileRepository {
   ): Promise<Result<void, QuartzError>> {
     if (from === to) return ok(undefined);
     if (isWithin(to, from)) {
-      return err(quartzError("path.invalid", "A folder cannot be moved into itself."));
+      return err(
+        quartzError("path.invalid", "A folder cannot be moved into itself.", {
+          key: "path.move_into_itself",
+        }),
+      );
     }
     const now = new Date().toISOString();
     try {
@@ -170,8 +178,16 @@ export class FileRepository {
         return "moved";
       });
       if (outcome === "missing")
-        return err(quartzError("path.not_found", `${from} does not exist.`));
-      if (outcome === "exists") return err(quartzError("path.exists", `${to} already exists.`));
+        return err(
+          quartzError("path.not_found", `${from} does not exist.`, { values: { path: from } }),
+        );
+      if (outcome === "exists")
+        return err(
+          quartzError("path.exists", `${to} already exists.`, {
+            key: "path.target_exists",
+            values: { path: to },
+          }),
+        );
       return ok(undefined);
     } catch (cause) {
       return err(toStorageError(cause));
@@ -190,7 +206,8 @@ export class FileRepository {
         if (ids.length > 0) await this.bumpProject(projectId, now);
         return ids.length;
       });
-      if (removed === 0) return err(quartzError("path.not_found", `${path} does not exist.`));
+      if (removed === 0)
+        return err(quartzError("path.not_found", `${path} does not exist.`, { values: { path } }));
       return ok(removed);
     } catch (cause) {
       return err(toStorageError(cause));

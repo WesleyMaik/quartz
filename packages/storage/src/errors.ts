@@ -20,5 +20,7 @@ export function toStorageError(cause: unknown): QuartzError {
     return quartzError("storage.unavailable", "Browser storage is unavailable in this session.");
   }
   const message = cause instanceof Error ? cause.message : String(cause);
-  return quartzError("storage.failed", `Storage operation failed: ${message}`);
+  return quartzError("storage.failed", `Storage operation failed: ${message}`, {
+    values: { reason: message },
+  });
 }
