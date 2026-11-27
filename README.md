@@ -53,7 +53,8 @@ Quartz takes the opposite approach:
 | First-page thumbnails in the project list                                              | ✅         |
 | Light and dark themes                                                                  | ✅         |
 | Download a project as a standard ZIP                                                   | ✅         |
-| ZIP and single-file import                                                             | 🚧 Planned |
+| Import a ZIP archive, with main document detection                                     | ✅         |
+| Single-file and folder import as a new project                                         | 🚧 Planned |
 | WebMCP agent tools with staged change review and undo                                  | 🚧 Planned |
 | Offline PWA, command palette, bibliography tools, SyncTeX navigation                   | 🚧 Planned |
 
@@ -159,7 +160,7 @@ Cloudflare Pages limits single files to 25 MiB, and three engine files are large
 
 ## Your data
 
-Projects are stored in your browser's storage for this site. Clearing site data, or the browser evicting storage, deletes them. Quartz asks the browser for persistent storage, but the browser decides whether to grant it. Download projects as ZIP regularly to keep backups of important work. Importing a ZIP back is not available yet.
+Projects are stored in your browser's storage for this site. Clearing site data, or the browser evicting storage, deletes them. Quartz asks the browser for persistent storage, but the browser decides whether to grant it. Download projects as ZIP regularly to keep backups of important work. A downloaded ZIP can be imported back as a new project.
 
 ## Documentation
 

@@ -81,7 +81,7 @@ interface TextEdit { oldText: string; newText: string; replaceAll?: boolean } //
 
 ## 4. Engine detection
 
-Applied on import of anything without a valid manifest and when a project has no entry:
+Applied on import. A single candidate, or a single `main.*` closest to the root, is used; otherwise the user chooses. When nothing looks like a root, every `.tex` and `.typ` file is offered. The LaTeX variant is read from the chosen entry only.
 
 1. Candidate entries: `main.tex`, `main.typ`, then any `.tex` containing `\documentclass` at top level, then any `.typ` at the root.
 2. LaTeX score: `\documentclass` (+10), `\begin{document}` (+10), `.tex` count.

@@ -15,25 +15,25 @@ A Quartz project travels as an ordinary ZIP of its source tree. There is no cust
 
 The archive does not carry the project title (beyond the file name), engine, main document or LaTeX variant. Import detects them from the content.
 
-## 2. Import sources (planned)
+## 2. Import sources
 
-| Input | Handling |
-|---|---|
-| ZIP (Quartz, Overleaf or Prism export, GitHub download) | Strip a single common top-level folder if present; ignore `__MACOSX/`, `.DS_Store` and `Thumbs.db`; detect engine and entry ([engine detection](document-domain.md#engine-detection)) |
-| Single `.tex` / `.typ` / `.bib` file | Create a project with that file as entry (for `.bib`, ask for engine) |
-| Folder (`<input webkitdirectory>` or File System Access) | Same as ZIP |
+| Input | Status | Handling |
+|---|---|---|
+| ZIP (Quartz, Overleaf or Prism export, GitHub download) | Implemented | Ignore operating-system and VCS clutter (`__MACOSX/`, `.DS_Store`, `Thumbs.db`, `.git/`), strip a single common top-level folder, keep folder entries, detect engine and entry ([engine detection](document-domain.md#4-engine-detection)) |
+| Single `.tex` / `.typ` / `.bib` file | Planned | Create a project with that file as entry (for `.bib`, ask for engine) |
+| Folder (`<input webkitdirectory>` or File System Access) | Planned | Same as ZIP |
 
-Detection uses content, never the file extension of the archive alone. When several documents qualify as the entry, the user chooses.
+Detection uses content, never the file name of the archive. The project title comes from the file name. When several documents qualify as the entry, the user chooses; an archive without a UTF-8 `.tex` or `.typ` file is refused.
 
 ## 3. Import validation
 
-Runs fully in memory (or streaming) before any storage write. Order:
+`readProjectZip` runs in a worker and validates everything in memory before any storage write. Order:
 
-1. **Container**: size ≤ 1 GB compressed; valid central directory; ≤ 10,000 entries.
-2. **Paths** (`parseProjectPath`): reject absolute (`/x`, `C:\x`, `\\server`), `..` segments, empty segments, `.` segments, backslashes, NUL/control characters (U+0000-U+001F, U+007F), trailing dots/spaces in segments, Windows reserved names (`CON`, `PRN`, `AUX`, `NUL`, `COM1`-`COM9`, `LPT1`-`LPT9`), length > 1024 bytes, depth > 32. Normalize to NFC.
-3. **Duplicates**: reject two entries equal after NFC + case folding.
-4. **Symlinks / special entries**: reject entries whose external attributes mark a symlink or device.
-5. **Sizes while inflating**: per entry ≤ 100 MB, cumulative ≤ 1 GB, stop inflating when exceeded; reject ratio > 200:1 for entries larger than 1 MB.
-6. **Content sanity**: text-kind files must decode as UTF-8 (else stored as binary with a warning); nothing is executed or rendered as HTML.
+1. **Container**: size ≤ 1 GB compressed; valid central directory (ZIP64 supported); ≤ 10,000 entries.
+2. **Paths** (`parseProjectPath`): reject absolute (`/x`, `C:\x`, `\\server`), `..` segments, empty segments, `.` segments, backslashes, NUL/control characters (U+0000-U+001F, U+007F), trailing dots/spaces in segments, Windows reserved names (`CON`, `PRN`, `AUX`, `NUL`, `COM1`-`COM9`, `LPT1`-`LPT9`), length > 1024 bytes, depth > 32. Normalize to NFC. Names that are not UTF-8 are decoded as CP437 first.
+3. **Entry types**: reject symlinks and special files, encrypted entries and methods other than Stored and Deflate.
+4. **Duplicates**: reject entries equal after NFC + case folding, folders spelled two ways, and a path used as both file and folder.
+5. **Sizes while inflating**: per entry ≤ 100 MB, cumulative ≤ 1 GB, stop inflating when exceeded; reject ratio > 200:1 for entries larger than 1 MB. Inflated size and CRC-32 must match the directory.
+6. **Content sanity**: text-kind files must decode as UTF-8, keeping any byte order mark (else stored unchanged as binary with a warning); nothing is executed or rendered as HTML.
 
-Errors are reported as a list with codes: `archive.too_large`, `archive.too_many_entries`, `archive.invalid_path`, `archive.duplicate_entry`, `archive.bomb_suspected`.
+The first violation refuses the whole archive, with a message naming the entry and one of these codes: `archive.invalid`, `archive.too_large`, `archive.too_many_entries`, `archive.invalid_path`, `archive.duplicate_entry`, `archive.unsupported_entry`, `archive.bomb_suspected`, `archive.no_document`.
