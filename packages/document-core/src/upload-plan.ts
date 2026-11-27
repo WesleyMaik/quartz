@@ -84,6 +84,10 @@ export function planUpload(
       quartzError(
         "upload.limit_exceeded",
         `This upload has ${uploads.length} files; the limit is ${MAX_UPLOAD_FILES} per upload.`,
+        {
+          key: "upload.too_many_files",
+          values: { count: uploads.length, limit: MAX_UPLOAD_FILES },
+        },
       ),
     );
   }
@@ -92,6 +96,7 @@ export function planUpload(
       quartzError(
         "upload.limit_exceeded",
         `This upload is larger than ${MAX_UPLOAD_TOTAL_BYTES / 1024 / 1024} MB.`,
+        { key: "upload.too_large", values: { limit: MAX_UPLOAD_TOTAL_BYTES / 1024 / 1024 } },
       ),
     );
   }

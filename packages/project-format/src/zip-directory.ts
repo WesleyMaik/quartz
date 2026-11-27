@@ -113,6 +113,7 @@ export function readZipDirectory(bytes: Uint8Array, maxEntries: number): ZipReco
     throw new ArchiveFailure(
       "archive.too_many_entries",
       `The archive has ${directory.count} entries; the limit is ${maxEntries}.`,
+      { values: { count: directory.count, limit: maxEntries } },
     );
   }
 

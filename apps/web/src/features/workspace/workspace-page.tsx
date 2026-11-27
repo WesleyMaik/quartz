@@ -4,13 +4,15 @@ import { cn, Icon, ResizableGroup, ResizableHandle, ResizablePanel, Sheet } from
 import { ArrowUp01Icon, Cancel01Icon, File01Icon } from "@qrtz/ui/icons";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useIntl } from "react-intl";
 import { Link, useParams } from "react-router";
 import { useServices } from "../../app/services";
 import { useSettings } from "../../app/settings";
+import { useDescribeError } from "../../app/use-describe-error";
 import { useDocumentTitle } from "../../app/use-document-title";
+import { useFormat } from "../../app/use-format";
 import { MOBILE_QUERY, useMediaQuery } from "../../app/use-media-query";
 import { useSidebar } from "../../app/use-sidebar";
-import { formatTime } from "../../lib/format";
 import { DocumentInfo } from "../preview/document-info";
 import { PdfPreview } from "../preview/pdf-preview";
 import { SettingsButton } from "../settings/settings-button";
@@ -28,16 +30,13 @@ const AUTO_COMPILE_DELAY_MS = { typst: 600, latex: 2500 } as const;
 
 type MobileTab = "files" | "editor" | "preview";
 
-const MOBILE_TABS: readonly { readonly id: MobileTab; readonly label: string }[] = [
-  { id: "files", label: "Files" },
-  { id: "editor", label: "Editor" },
-  { id: "preview", label: "Preview" },
-];
+const MOBILE_TABS: readonly MobileTab[] = ["files", "editor", "preview"];
 
 export function WorkspacePage() {
   const { projectId: rawId } = useParams();
   const projectId = rawId === undefined ? undefined : parseProjectId(rawId);
   const { db } = useServices();
+  const intl = useIntl();
   const project = useLiveQuery(
     async () => (projectId === undefined ? null : ((await db.projects.get(projectId)) ?? null)),
     [db, projectId],
@@ -47,9 +46,9 @@ export function WorkspacePage() {
   if (project === null) {
     return (
       <div className="fade-in flex h-full animate-in flex-col items-center justify-center gap-2">
-        <p className="font-medium">Project not found</p>
+        <p className="font-medium">{intl.formatMessage({ id: "workspace.not_found" })}</p>
         <Link to="/" className="text-primary underline">
-          Back to projects
+          {intl.formatMessage({ id: "common.back_to_projects" })}
         </Link>
       </div>
     );
@@ -59,6 +58,9 @@ export function WorkspacePage() {
 
 function Workspace({ project }: { readonly project: Project }) {
   const { db, compiler, projects } = useServices();
+  const intl = useIntl();
+  const format = useFormat();
+  const describeError = useDescribeError();
   const entries = useLiveQuery(
     () => db.files.where("projectId").equals(project.id).sortBy("path"),
     [db, project.id],
@@ -125,7 +127,7 @@ function Workspace({ project }: { readonly project: Project }) {
 
   const exportNow = async () => {
     await editorRef.current?.flush();
-    await exportProject(projects, projectRef.current);
+    await exportProject(projects, projectRef.current, describeError);
   };
 
   // First build when the workspace opens.
@@ -195,8 +197,11 @@ function Workspace({ project }: { readonly project: Project }) {
   const saveStatus: SaveStatus = dirty.size > 0 ? "unsaved" : "saved";
   const notice = useMemo(() => {
     if (!compileState.stale || compileState.lastPdf === undefined) return undefined;
-    return `Build failed. Showing last successful build from ${formatTime(compileState.lastPdf.builtAt)}`;
-  }, [compileState.stale, compileState.lastPdf]);
+    return intl.formatMessage(
+      { id: "workspace.stale_notice" },
+      { time: format.time(compileState.lastPdf.builtAt) },
+    );
+  }, [compileState.stale, compileState.lastPdf, intl, format]);
   useDocumentTitle(
     `Quartz - ${active === undefined ? project.title : active.slice(active.lastIndexOf("/") + 1)}`,
   );
@@ -255,17 +260,20 @@ function Workspace({ project }: { readonly project: Project }) {
       fileName={`${entryStem}.pdf`}
       notice={notice}
       renderInfo={(pdf) => <DocumentInfo project={project} compileState={compileState} pdf={pdf} />}
-      emptyMessage={
-        compileState.status === "initializing"
-          ? "Loading the compiler. The first build downloads the engine once."
-          : compileState.status === "error"
-            ? "The build failed. See Problems for details."
-            : "Compile to see the PDF."
-      }
+      emptyMessage={intl.formatMessage({
+        id:
+          compileState.status === "initializing"
+            ? "workspace.preview.loading"
+            : compileState.status === "error"
+              ? "workspace.preview.failed"
+              : "workspace.preview.idle",
+      })}
     />
   );
   const activeName =
-    active === undefined ? "No file open" : active.slice(active.lastIndexOf("/") + 1);
+    active === undefined
+      ? intl.formatMessage({ id: "workspace.no_file" })
+      : active.slice(active.lastIndexOf("/") + 1);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -282,24 +290,28 @@ function Workspace({ project }: { readonly project: Project }) {
       />
       {isMobile ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex h-11 shrink-0 border-b px-2" role="tablist" aria-label="Workspace">
+          <div
+            className="flex h-11 shrink-0 border-b px-2"
+            role="tablist"
+            aria-label={intl.formatMessage({ id: "workspace.tabs" })}
+          >
             {MOBILE_TABS.map((tab) => (
               <button
-                key={tab.id}
+                key={tab}
                 type="button"
                 role="tab"
-                aria-selected={mobileTab === tab.id}
-                onClick={() => setMobileTab(tab.id)}
+                aria-selected={mobileTab === tab}
+                onClick={() => setMobileTab(tab)}
                 className={cn(
                   "relative flex-1 cursor-pointer font-medium text-muted-foreground transition-colors duration-150",
-                  mobileTab === tab.id && "text-foreground",
+                  mobileTab === tab && "text-foreground",
                 )}
               >
-                {tab.label}
+                {intl.formatMessage({ id: `workspace.tab.${tab}` })}
                 <span
                   className={cn(
                     "absolute inset-x-6 bottom-0 h-0.5 origin-center scale-x-0 rounded-full bg-primary transition-transform duration-200 ease-out",
-                    mobileTab === tab.id && "scale-x-100",
+                    mobileTab === tab && "scale-x-100",
                   )}
                 />
               </button>
@@ -350,7 +362,7 @@ function Workspace({ project }: { readonly project: Project }) {
           <Sheet
             open={drawerOpen}
             onOpenChange={setDrawerOpen}
-            title="Project files"
+            title={intl.formatMessage({ id: "common.project_files" })}
             header={
               <div className="flex items-center gap-2 border-b px-4 pt-2 pb-3 font-semibold">
                 <Icon icon={File01Icon} size={15} className="text-muted-foreground" />
@@ -374,7 +386,7 @@ function Workspace({ project }: { readonly project: Project }) {
                 <div
                   className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b px-2"
                   role="tablist"
-                  aria-label="Open files"
+                  aria-label={intl.formatMessage({ id: "workspace.open_files" })}
                 >
                   {tabs.map((path) => (
                     <div
@@ -398,7 +410,7 @@ function Workspace({ project }: { readonly project: Project }) {
                       </button>
                       <button
                         type="button"
-                        aria-label={`Close ${path}`}
+                        aria-label={intl.formatMessage({ id: "workspace.close_tab" }, { path })}
                         onClick={() => close(path)}
                         className="pressable flex size-5 cursor-pointer items-center justify-center rounded-md hover:bg-foreground/10"
                       >

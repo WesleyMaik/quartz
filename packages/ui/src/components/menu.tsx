@@ -1,7 +1,9 @@
 import { ContextMenu as BaseContextMenu } from "@base-ui/react/context-menu";
 import { Menu as BaseMenu } from "@base-ui/react/menu";
 import type { ReactElement, ReactNode } from "react";
+import { Tick02Icon } from "../icons";
 import { cn } from "../lib/utils";
+import { Icon } from "./icon";
 
 export interface MenuAction {
   readonly id: string;
@@ -9,6 +11,8 @@ export interface MenuAction {
   readonly onSelect: () => void;
   readonly destructive?: boolean;
   readonly disabled?: boolean;
+  /** Marks the current choice in a menu that picks one value. */
+  readonly selected?: boolean;
 }
 
 const popupClass =
@@ -26,8 +30,12 @@ function Items({ actions }: { readonly actions: readonly MenuAction[] }) {
       )}
       onClick={action.onSelect}
       disabled={action.disabled ?? false}
+      aria-current={action.selected === true ? "true" : undefined}
     >
       {action.label}
+      {action.selected === true ? (
+        <Icon icon={Tick02Icon} size={14} className="ml-auto pl-3 box-content" />
+      ) : null}
     </BaseMenu.Item>
   ));
 }

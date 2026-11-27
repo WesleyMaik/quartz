@@ -40,5 +40,6 @@ export {
   SourceCodeIcon,
   StarIcon,
   Sun03Icon,
+  Tick02Icon,
   Upload04Icon,
 } from "@hugeicons/core-free-icons";

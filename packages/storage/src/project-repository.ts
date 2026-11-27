@@ -99,7 +99,10 @@ export class ProjectRepository {
 
   async rename(id: ProjectId, title: string): Promise<Result<Project, QuartzError>> {
     const trimmed = title.trim();
-    if (trimmed.length === 0) return err(quartzError("path.invalid", "Title cannot be empty."));
+    if (trimmed.length === 0)
+      return err(
+        quartzError("path.invalid", "Title cannot be empty.", { key: "path.title_empty" }),
+      );
     try {
       const updatedAt = new Date().toISOString();
       const count = await this.db.projects.update(id, { title: trimmed, updatedAt });

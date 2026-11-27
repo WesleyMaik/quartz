@@ -97,14 +97,6 @@ Order by value/effort:
 7. Additional exports: Typst HTML export, LaTeX → HTML via LaTeXML (if engine supports) (L).
 8. Collaboration: Yjs + y-codemirror.next over WebRTC (no server is hard: needs signaling; re-evaluate the constraint first) (XL).
 
-## Internationalization (planned)
+## Internationalization (done)
 
-Quartz ships English text only. Settings already stores a language preference (`system` or `en`, see `apps/web/src/app/locale.ts`), so adding languages changes no stored data.
-
-1. Move interface strings into typed message catalogs, one per locale, with English as the source and the fallback. Includes service error messages, which should become codes plus parameters.
-2. Format numbers, dates and plurals with `Intl` instead of hand-built strings.
-3. Resolve `system` from `navigator.languages`; set `<html lang>` accordingly.
-4. Add locales (Portuguese first), loading each catalog on demand, and check layouts with longer text.
-
-Choose the library, if any, when the work starts; it must be permissive, small and need no runtime network access. Document content is never translated.
-
+The interface ships in English, Portuguese (Brazil), Spanish, Simplified and Traditional Chinese, and Japanese. See [ADR-007](../decisions/ADR-007-internationalization.md). Open: native-speaker review of the translations and localized share metadata.

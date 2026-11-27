@@ -50,7 +50,11 @@ export class ProjectService {
     title: string,
   ): Promise<Result<Project, QuartzError>> {
     const template = findTemplate(templateId);
-    if (template === undefined) return err(quartzError("project.not_found", "Unknown template."));
+    if (template === undefined) {
+      return err(
+        quartzError("project.not_found", "Unknown template.", { key: "project.unknown_template" }),
+      );
+    }
     const entry = parseProjectPath(template.entry);
     if (!entry.ok) return err(quartzError("path.invalid", "Template entry is invalid."));
 
@@ -76,8 +80,8 @@ export class ProjectService {
     return this.projects.rename(id, title);
   }
 
-  duplicate(project: Project) {
-    return this.projects.duplicate(project.id, `${project.title} (copy)`);
+  duplicate(project: Project, title: string) {
+    return this.projects.duplicate(project.id, title);
   }
 
   /** Validates a ZIP and finds its possible main documents without writing anything. */
@@ -129,7 +133,9 @@ export class ProjectService {
       });
     } catch (cause) {
       const reason = cause instanceof Error ? cause.message : String(cause);
-      return err(quartzError("archive.export_failed", `Export failed: ${reason}`));
+      return err(
+        quartzError("archive.export_failed", `Export failed: ${reason}`, { values: { reason } }),
+      );
     }
   }
 
@@ -138,7 +144,11 @@ export class ProjectService {
     try {
       const all = await this.projects.list();
       if (all.length === 0) {
-        return err(quartzError("project.not_found", "There are no projects to export."));
+        return err(
+          quartzError("project.not_found", "There are no projects to export.", {
+            key: "project.nothing_to_export",
+          }),
+        );
       }
       const entries = [];
       for (const project of all) {
@@ -156,7 +166,9 @@ export class ProjectService {
       });
     } catch (cause) {
       const reason = cause instanceof Error ? cause.message : String(cause);
-      return err(quartzError("archive.export_failed", `Export failed: ${reason}`));
+      return err(
+        quartzError("archive.export_failed", `Export failed: ${reason}`, { values: { reason } }),
+      );
     }
   }
 

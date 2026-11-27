@@ -6,6 +6,13 @@ describe("parseSettings", () => {
     expect(parseSettings(raw)).toEqual(DEFAULT_SETTINGS);
   });
 
+  it.each(["system", "en", "pt-BR", "es", "zh-CN", "zh-TW", "ja"])(
+    "keeps the %s language",
+    (language) => {
+      expect(parseSettings(JSON.stringify({ language })).language).toBe(language);
+    },
+  );
+
   it("keeps valid values and replaces invalid ones one by one", () => {
     const raw = JSON.stringify({
       editorFontSize: "large",

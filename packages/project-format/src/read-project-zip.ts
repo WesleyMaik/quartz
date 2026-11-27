@@ -74,15 +74,21 @@ function extract(
 ): Uint8Array<ArrayBuffer> {
   const check = (produced: number) => {
     if (produced > limits.entryBytes) {
-      throw new ArchiveFailure("archive.too_large", `${record.name} is too large.`);
+      throw new ArchiveFailure("archive.too_large", `${record.name} is too large.`, {
+        key: "archive.entry_too_large",
+        values: { name: record.name },
+      });
     }
     if (produced > remainingBytes) {
-      throw new ArchiveFailure("archive.too_large", "The uncompressed project is too large.");
+      throw new ArchiveFailure("archive.too_large", "The uncompressed project is too large.", {
+        key: "archive.project_too_large",
+      });
     }
     if (produced > limits.ratioFloorBytes && produced > record.compressedSize * limits.ratio) {
       throw new ArchiveFailure(
         "archive.bomb_suspected",
         `${record.name} expands suspiciously far; the archive was refused.`,
+        { values: { name: record.name } },
       );
     }
   };
@@ -113,7 +119,10 @@ function extract(
   }
 
   if (output.length !== record.size || crc32(output) !== record.crc32) {
-    throw new ArchiveFailure("archive.invalid", `${record.name} is damaged.`);
+    throw new ArchiveFailure("archive.invalid", `${record.name} is damaged.`, {
+      key: "archive.damaged_entry",
+      values: { name: record.name },
+    });
   }
   return output;
 }
@@ -136,24 +145,31 @@ function validEntries(records: readonly ZipRecord[]): Entry[] {
       throw new ArchiveFailure(
         "archive.invalid_path",
         `Unsafe path "${record.name}": ${userMessageForPathError(path.error)}`,
+        {
+          key: "archive.unsafe_path",
+          values: { path: record.name, pathReason: path.error.reason },
+        },
       );
     }
     if (record.special) {
       throw new ArchiveFailure(
         "archive.unsupported_entry",
         `${record.name} is a link or special file.`,
+        { key: "archive.link_entry", values: { name: record.name } },
       );
     }
     if (record.encrypted) {
       throw new ArchiveFailure(
         "archive.unsupported_entry",
         "Encrypted archives are not supported.",
+        { key: "archive.encrypted" },
       );
     }
     if (!folder && record.method !== STORED && record.method !== DEFLATED) {
       throw new ArchiveFailure(
         "archive.unsupported_entry",
         `${record.name} uses an unsupported compression method.`,
+        { key: "archive.compression", values: { name: record.name } },
       );
     }
     entries.push({ record, path: path.value, folder });
@@ -186,7 +202,9 @@ function rejectDuplicates(entries: readonly Entry[]): void {
     const key = pathIdentityKey(path as ProjectPath);
     const previous = seen.get(key);
     if (previous !== undefined && (previous.path !== path || !previous.folder || !folder)) {
-      throw new ArchiveFailure("archive.duplicate_entry", `"${path}" appears more than once.`);
+      throw new ArchiveFailure("archive.duplicate_entry", `"${path}" appears more than once.`, {
+        values: { path },
+      });
     }
     seen.set(key, { path, folder });
   };
@@ -195,6 +213,7 @@ function rejectDuplicates(entries: readonly Entry[]): void {
       throw new ArchiveFailure(
         "archive.duplicate_entry",
         `"${entry.path}" appears more than once.`,
+        { values: { path: entry.path } },
       );
     }
     explicit.add(entry.path);
@@ -253,7 +272,8 @@ export function readProjectZip(
   try {
     return ok(read(archive, limits));
   } catch (cause) {
-    if (cause instanceof ArchiveFailure) return err(quartzError(cause.code, cause.message));
+    if (cause instanceof ArchiveFailure)
+      return err(quartzError(cause.code, cause.message, cause.detail));
     // Out-of-range reads and inflate errors mean the archive is damaged.
     return err(quartzError("archive.invalid", "The file is not a valid ZIP archive."));
   }

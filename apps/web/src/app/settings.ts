@@ -1,14 +1,18 @@
+import { LOCALE_IDS } from "@qrtz/messages";
 import { z } from "zod";
 import { create } from "zustand";
-import { LOCALE_PREFERENCES } from "./locale";
 
 const STORAGE_KEY = "quartz:settings";
 
+export const LOCALE_PREFERENCES = ["system", ...LOCALE_IDS] as const;
+
+export type LocalePreference = (typeof LOCALE_PREFERENCES)[number];
+
 export const EDITOR_FONT_SIZES = {
-  small: { label: "Small", pixels: 12 },
-  normal: { label: "Normal", pixels: 13.5 },
-  large: { label: "Large", pixels: 15.5 },
-  "x-large": { label: "Extra large", pixels: 18 },
+  small: 12,
+  normal: 13.5,
+  large: 15.5,
+  "x-large": 18,
 } as const;
 
 export type EditorFontSize = keyof typeof EDITOR_FONT_SIZES;

@@ -12,16 +12,26 @@ const PAPERS: readonly (readonly [name: string, width: number, height: number])[
 
 const matches = (a: number, b: number): boolean => Math.abs(a - b) <= TOLERANCE_MM;
 
-/** Describes a page given in PDF points, for example "A4 (210 × 297 mm)". */
-export function formatPageSize(widthPoints: number, heightPoints: number): string {
+export interface PageSize {
+  /** For example "210 × 297 mm". */
+  readonly dimensions: string;
+  /** Standard paper name, when the page matches one. */
+  readonly paper: string | undefined;
+  readonly landscape: boolean;
+}
+
+/** Describes a page given in PDF points; the interface words the result. */
+export function describePageSize(widthPoints: number, heightPoints: number): PageSize {
   const width = widthPoints * MILLIMETRES_PER_POINT;
   const height = heightPoints * MILLIMETRES_PER_POINT;
   const dimensions = `${Math.round(width)} × ${Math.round(height)} mm`;
-  for (const [name, short, long] of PAPERS) {
-    if (matches(width, short) && matches(height, long)) return `${name} (${dimensions})`;
+  for (const [paper, short, long] of PAPERS) {
+    if (matches(width, short) && matches(height, long)) {
+      return { dimensions, paper, landscape: false };
+    }
     if (matches(width, long) && matches(height, short)) {
-      return `${name} landscape (${dimensions})`;
+      return { dimensions, paper, landscape: true };
     }
   }
-  return dimensions;
+  return { dimensions, paper: undefined, landscape: false };
 }

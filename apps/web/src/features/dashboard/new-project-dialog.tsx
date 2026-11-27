@@ -1,7 +1,17 @@
-import { PROJECT_TEMPLATES, type Project } from "@qrtz/document-core";
+import { PROJECT_TEMPLATES, type Project, type ProjectTemplate } from "@qrtz/document-core";
+import type { MessageId } from "@qrtz/messages";
 import { Button, cn, Dialog, Input } from "@qrtz/ui";
 import { useId, useState } from "react";
+import { useIntl } from "react-intl";
 import { useServices } from "../../app/services";
+import { useDescribeError } from "../../app/use-describe-error";
+
+const TEMPLATE_LABELS: Readonly<Record<string, MessageId>> = {
+  "typst-article": "template.typst-article",
+  "latex-article": "template.latex-article",
+  "typst-empty": "template.typst-empty",
+  "latex-empty": "template.latex-empty",
+};
 
 export function NewProjectDialog({
   open,
@@ -18,13 +28,23 @@ export function NewProjectDialog({
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const titleId = useId();
+  const intl = useIntl();
+  const describeError = useDescribeError();
+
+  const templateLabel = (template: ProjectTemplate): string => {
+    const id = TEMPLATE_LABELS[template.id];
+    return id === undefined ? template.label : intl.formatMessage({ id });
+  };
 
   const submit = async () => {
     setBusy(true);
-    const result = await projects.createFromTemplate(templateId, title);
+    const template = PROJECT_TEMPLATES.find((item) => item.id === templateId);
+    // An empty title takes the template's name, in the interface language.
+    const fallback = template === undefined ? "" : templateLabel(template);
+    const result = await projects.createFromTemplate(templateId, title.trim() || fallback);
     setBusy(false);
     if (!result.ok) {
-      setError(result.error.message);
+      setError(describeError(result.error));
       return;
     }
     setTitle("");
@@ -37,15 +57,15 @@ export function NewProjectDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title="New project"
-      description="Choose a starting point. You can add files and folders later."
+      title={intl.formatMessage({ id: "dashboard.new_project" })}
+      description={intl.formatMessage({ id: "new_project.description" })}
       footer={
         <>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {intl.formatMessage({ id: "common.cancel" })}
           </Button>
           <Button onClick={submit} disabled={busy}>
-            Create
+            {intl.formatMessage({ id: "new_project.create" })}
           </Button>
         </>
       }
@@ -58,7 +78,9 @@ export function NewProjectDialog({
         }}
       >
         <fieldset className="grid grid-cols-2 gap-2">
-          <legend className="mb-2 font-medium">Template</legend>
+          <legend className="mb-2 font-medium">
+            {intl.formatMessage({ id: "new_project.template" })}
+          </legend>
           {PROJECT_TEMPLATES.map((template) => (
             <label
               key={template.id}
@@ -76,20 +98,20 @@ export function NewProjectDialog({
                 onChange={() => setTemplateId(template.id)}
                 className="sr-only"
               />
-              <span className="font-medium">{template.label}</span>
+              <span className="font-medium">{templateLabel(template)}</span>
               <span className="text-muted-foreground text-xs">{template.entry}</span>
             </label>
           ))}
         </fieldset>
         <div className="space-y-1.5">
           <label htmlFor={titleId} className="block font-medium">
-            Title
+            {intl.formatMessage({ id: "dashboard.title_label" })}
           </label>
           <Input
             id={titleId}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Untitled paper"
+            placeholder={intl.formatMessage({ id: "new_project.placeholder" })}
             autoFocus
           />
         </div>

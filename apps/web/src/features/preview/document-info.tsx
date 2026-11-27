@@ -1,7 +1,8 @@
 import { documentStatistics, type Project, totalWords } from "@qrtz/document-core";
 import { useMemo } from "react";
-import { formatBytes, formatTime } from "../../lib/format";
-import { formatPageSize } from "../../lib/page-size";
+import { useIntl } from "react-intl";
+import { useFormat } from "../../app/use-format";
+import { describePageSize } from "../../lib/page-size";
 import type { CompileState } from "../../services/compile-service";
 import { useSources } from "../workspace/use-sources";
 
@@ -43,6 +44,8 @@ export function DocumentInfo({
   readonly compileState: CompileState;
   readonly pdf: PdfDetails | undefined;
 }) {
+  const intl = useIntl();
+  const format = useFormat();
   const sources = useSources(project.id);
   const statistics = useMemo(
     () => (sources === undefined ? undefined : documentStatistics(sources, project.entry)),
@@ -50,55 +53,80 @@ export function DocumentInfo({
   );
   const build = compileState.lastPdf;
 
+  const pageSize = ({ pageWidth, pageHeight }: PdfDetails): string => {
+    const { paper, landscape, dimensions } = describePageSize(pageWidth, pageHeight);
+    if (paper === undefined) return dimensions;
+    const id = landscape ? "info.page_size.landscape" : "info.page_size.portrait";
+    return intl.formatMessage({ id }, { paper, dimensions });
+  };
+
   return (
     <div className="h-full space-y-6 overflow-auto p-4 md:p-5">
       {statistics === undefined ? null : (
         <div className="space-y-2">
           <StatGrid
-            title="Summary"
+            title={intl.formatMessage({ id: "info.summary" })}
             stats={[
-              ["Words", totalWords(statistics)],
-              ["Words in text", statistics.wordsInText],
-              ["Words in headings", statistics.wordsInHeadings],
-              ["Words outside text", statistics.wordsOutsideText],
-              ["Headings", statistics.headings],
-              ["Figures", statistics.figures],
-              ["Inline formulas", statistics.inlineMath],
-              ["Displayed formulas", statistics.displayMath],
+              [intl.formatMessage({ id: "info.words" }), format.number(totalWords(statistics))],
+              [
+                intl.formatMessage({ id: "info.words_text" }),
+                format.number(statistics.wordsInText),
+              ],
+              [
+                intl.formatMessage({ id: "info.words_headings" }),
+                format.number(statistics.wordsInHeadings),
+              ],
+              [
+                intl.formatMessage({ id: "info.words_outside" }),
+                format.number(statistics.wordsOutsideText),
+              ],
+              [intl.formatMessage({ id: "info.headings" }), format.number(statistics.headings)],
+              [intl.formatMessage({ id: "info.figures" }), format.number(statistics.figures)],
+              [
+                intl.formatMessage({ id: "info.inline_math" }),
+                format.number(statistics.inlineMath),
+              ],
+              [
+                intl.formatMessage({ id: "info.display_math" }),
+                format.number(statistics.displayMath),
+              ],
             ]}
           />
           <p className="text-muted-foreground text-xs">
-            Estimated from the saved source files. Captions and footnotes count as outside text.
+            {intl.formatMessage({ id: "info.estimate" })}
           </p>
         </div>
       )}
       {pdf === undefined || build === undefined ? (
         <p className="text-muted-foreground text-xs">
-          PDF details appear after a successful build.
+          {intl.formatMessage({ id: "info.after_build" })}
         </p>
       ) : (
         <StatGrid
           title="PDF"
           stats={[
-            ["Pages", pdf.pages],
-            ["File size", formatBytes(build.bytes.byteLength)],
-            ["Page size", formatPageSize(pdf.pageWidth, pdf.pageHeight)],
-            ["PDF version", pdf.version ?? "-"],
-            ["Producer", pdf.producer ?? "-"],
+            [intl.formatMessage({ id: "info.pages" }), format.number(pdf.pages)],
+            [intl.formatMessage({ id: "info.file_size" }), format.bytes(build.bytes.byteLength)],
+            [intl.formatMessage({ id: "info.page_size" }), pageSize(pdf)],
+            [intl.formatMessage({ id: "info.pdf_version" }), pdf.version ?? "-"],
+            [intl.formatMessage({ id: "info.producer" }), pdf.producer ?? "-"],
             [
-              "Compiler",
+              intl.formatMessage({ id: "info.compiler" }),
               project.compiler.engine === "typst"
                 ? "Typst"
                 : project.compiler.variant === "xelatex"
                   ? "XeLaTeX"
                   : "pdfLaTeX",
             ],
-            ["Built at", formatTime(build.builtAt)],
+            [intl.formatMessage({ id: "info.built_at" }), format.time(build.builtAt)],
             [
-              "Last build time",
+              intl.formatMessage({ id: "info.build_time" }),
               compileState.durationMs === undefined
                 ? "-"
-                : `${Math.round(compileState.durationMs)} ms`,
+                : intl.formatMessage(
+                    { id: "info.duration" },
+                    { duration: format.number(Math.round(compileState.durationMs)) },
+                  ),
             ],
           ]}
         />

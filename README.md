@@ -55,6 +55,7 @@ Quartz takes the opposite approach:
 | Settings: editor, PDF viewer and data controls                                         | ✅         |
 | First-page thumbnails in the project list                                              | ✅         |
 | Light and dark themes                                                                  | ✅         |
+| Interface in English, Portuguese, Spanish, Chinese (Simplified, Traditional), Japanese | ✅         |
 | Download a project as a standard ZIP                                                   | ✅         |
 | Import a ZIP archive, with main document detection                                     | ✅         |
 | Single-file and folder import as a new project                                         | 🚧 Planned |
@@ -126,6 +127,7 @@ quartz/
 │   └── web/                 # Vite + React app: dashboard, workspace, services
 ├── packages/
 │   ├── document-core/       # Framework-free domain: projects, paths, templates, engine detection
+│   ├── messages/            # Interface translations (en, pt-BR, es, zh-CN, zh-TW, ja)
 │   ├── storage/             # Dexie (IndexedDB) repositories and storage status
 │   ├── editor/              # CodeMirror 6 setup with LaTeX and Typst languages
 │   ├── compiler-core/       # Compiler contracts, worker host, compile queue

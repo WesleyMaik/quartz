@@ -26,8 +26,8 @@ export interface UploadSource {
 
 export interface BatchOutcome<T> {
   readonly done: readonly T[];
-  /** User-facing messages for items that failed; the rest of the batch still went through. */
-  readonly failed: readonly string[];
+  /** Items that failed; the rest of the batch still went through. */
+  readonly failed: readonly { readonly path: ProjectPath; readonly error: QuartzError }[];
 }
 
 /** File use cases. Every path from the UI is validated here through `parseProjectPath`. */
@@ -41,7 +41,11 @@ export class FileService {
     const parsed = parseProjectPath(input.trim());
     return parsed.ok
       ? parsed
-      : err(quartzError("path.invalid", userMessageForPathError(parsed.error)));
+      : err(
+          quartzError("path.invalid", userMessageForPathError(parsed.error), {
+            key: `path.${parsed.error.reason}`,
+          }),
+        );
   }
 
   async createFile(projectId: ProjectId, input: string): Promise<Result<FileEntry, QuartzError>> {
@@ -76,7 +80,7 @@ export class FileService {
     sources: readonly UploadSource[],
   ): Promise<BatchOutcome<ProjectPath>> {
     const done: ProjectPath[] = [];
-    const failed: string[] = [];
+    const failed: BatchOutcome<ProjectPath>["failed"][number][] = [];
     for (const upload of plan.uploads) {
       const source = sources[upload.index];
       if (source === undefined) continue;
@@ -85,7 +89,7 @@ export class FileService {
         : { kind: "binary", bytes: source.file };
       const result = await this.files.create(projectId, upload.path, content);
       if (result.ok) done.push(upload.path);
-      else failed.push(`${upload.path}: ${result.error.message}`);
+      else failed.push({ path: upload.path, error: result.error });
     }
     return { done, failed };
   }
@@ -115,11 +119,11 @@ export class FileService {
     folder: string,
   ): Promise<BatchOutcome<PlannedMove>> {
     const done: PlannedMove[] = [];
-    const failed: string[] = [];
+    const failed: BatchOutcome<PlannedMove>["failed"][number][] = [];
     for (const move of planMove(paths, folder)) {
       const result = await this.files.move(projectId, move.from, move.to);
       if (result.ok) done.push(move);
-      else failed.push(`${move.from}: ${result.error.message}`);
+      else failed.push({ path: move.from, error: result.error });
     }
     return { done, failed };
   }

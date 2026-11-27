@@ -18,7 +18,13 @@ export const readArchiveInWorker: ArchiveReader = (file) => {
     worker.onmessage = (event: MessageEvent<Result<ProjectArchiveContents, QuartzError>>) =>
       finish(event.data);
     worker.onerror = () =>
-      finish(err(quartzError("archive.invalid", "The archive could not be processed.")));
+      finish(
+        err(
+          quartzError("archive.invalid", "The archive could not be processed.", {
+            key: "archive.unreadable",
+          }),
+        ),
+      );
     worker.postMessage(file);
   });
 };

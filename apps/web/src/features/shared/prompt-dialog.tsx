@@ -1,5 +1,6 @@
 import { Button, Dialog, Input } from "@qrtz/ui";
 import { useEffect, useId, useState } from "react";
+import { useIntl } from "react-intl";
 
 /** Asks for one value. `onSubmit` returns an error message to keep the dialog open, or undefined. */
 export function PromptDialog({
@@ -22,6 +23,7 @@ export function PromptDialog({
   const [value, setValue] = useState(initialValue);
   const [error, setError] = useState<string | undefined>();
   const inputId = useId();
+  const intl = useIntl();
 
   useEffect(() => {
     if (open) {
@@ -44,7 +46,7 @@ export function PromptDialog({
       footer={
         <>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {intl.formatMessage({ id: "common.cancel" })}
           </Button>
           <Button onClick={submit}>{confirmLabel}</Button>
         </>

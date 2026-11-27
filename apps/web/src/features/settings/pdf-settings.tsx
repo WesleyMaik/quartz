@@ -1,19 +1,21 @@
+import { useIntl } from "react-intl";
 import { useSettings } from "../../app/settings";
 import { ToggleRow } from "./settings-row";
 
 export function PdfSettings() {
   const settings = useSettings();
+  const intl = useIntl();
   return (
     <div className="divide-y">
       <ToggleRow
-        title="Dark PDF pages"
-        description="Invert page colors in the preview. The downloaded PDF does not change."
+        title={intl.formatMessage({ id: "settings.pdf_dark.title" })}
+        description={intl.formatMessage({ id: "settings.pdf_dark.description" })}
         checked={settings.pdfDarkMode}
         onChange={(pdfDarkMode) => settings.update({ pdfDarkMode })}
       />
       <ToggleRow
-        title="PDF zoom shortcuts"
-        description="In a project, Ctrl/Cmd with +, - or 0 zooms the preview instead of the browser."
+        title={intl.formatMessage({ id: "settings.pdf_zoom.title" })}
+        description={intl.formatMessage({ id: "settings.pdf_zoom.description" })}
         checked={settings.pdfZoomShortcuts}
         onChange={(pdfZoomShortcuts) => settings.update({ pdfZoomShortcuts })}
       />

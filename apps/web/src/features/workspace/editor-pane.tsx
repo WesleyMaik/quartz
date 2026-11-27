@@ -1,5 +1,5 @@
 import type { CompilerDiagnostic } from "@qrtz/compiler-core";
-import type { ProjectId, ProjectPath } from "@qrtz/document-core";
+import type { ProjectId, ProjectPath, QuartzError } from "@qrtz/document-core";
 import {
   applyEditorPreferences,
   createEditorState,
@@ -11,8 +11,10 @@ import {
 } from "@qrtz/editor";
 import { toast } from "@qrtz/ui";
 import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { useIntl } from "react-intl";
 import { useServices } from "../../app/services";
-import { formatBytes } from "../../lib/format";
+import { useDescribeError } from "../../app/use-describe-error";
+import { useFormat } from "../../app/use-format";
 import { useEditorPreferences } from "./use-editor-preferences";
 
 const AUTOSAVE_DELAY_MS = 750;
@@ -57,6 +59,9 @@ export function EditorPane({
   readonly ref?: Ref<EditorPaneHandle>;
 }) {
   const { files } = useServices();
+  const intl = useIntl();
+  const format = useFormat();
+  const describeError = useDescribeError();
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | undefined>(undefined);
   const sessions = useRef(new Map<string, Session>());
@@ -70,8 +75,11 @@ export function EditorPane({
   const preferences = useEditorPreferences();
   const preferencesRef = useRef(preferences);
   preferencesRef.current = preferences;
-  const callbacks = useRef({ onSaved, onDirtyChange, onCompileShortcut });
-  callbacks.current = { onSaved, onDirtyChange, onCompileShortcut };
+  const reportSaveError = (error: QuartzError) =>
+    toast.error(intl.formatMessage({ id: "editor.not_saved" }, { reason: describeError(error) }));
+  // Read through a ref, so a language change never recreates the editor view.
+  const callbacks = useRef({ onSaved, onDirtyChange, onCompileShortcut, reportSaveError });
+  callbacks.current = { onSaved, onDirtyChange, onCompileShortcut, reportSaveError };
 
   const currentText = (filePath: string, session: Session): string =>
     activePath.current === filePath && viewRef.current !== undefined
@@ -90,7 +98,7 @@ export function EditorPane({
       session.saving = (async () => {
         const result = await files.saveText(projectId, filePath as ProjectPath, text);
         if (!result.ok) {
-          toast.error(`Not saved: ${result.error.message}`);
+          callbacks.current.reportSaveError(result.error);
           return;
         }
         session.savedText = text;
@@ -183,7 +191,7 @@ export function EditorPane({
             /^image\/(png|jpeg|gif|webp)$/.test(bytes.type) ||
             /\.(png|jpe?g|gif|webp)$/i.test(path);
           objectUrl = isImage ? URL.createObjectURL(bytes) : undefined;
-          setBinary({ url: objectUrl, size: bytes.size, mediaType: bytes.type || "binary" });
+          setBinary({ url: objectUrl, size: bytes.size, mediaType: bytes.type });
           return;
         }
         const text = read.content.text;
@@ -282,13 +290,14 @@ export function EditorPane({
             />
           )}
           <span>
-            {binary.mediaType} · {formatBytes(binary.size)}
+            {binary.mediaType || intl.formatMessage({ id: "editor.binary" })} ·{" "}
+            {format.bytes(binary.size)}
           </span>
         </div>
       )}
       {path === undefined ? (
         <div className="absolute inset-0 flex items-center justify-center bg-background text-muted-foreground">
-          Select a file to edit
+          {intl.formatMessage({ id: "editor.select_file" })}
         </div>
       ) : null}
     </div>
