@@ -23,7 +23,12 @@ Document content and templates' file content, file names, compiler diagnostics a
 
 1. Add the id and native name in `packages/messages/src/locales.ts`, and its browser tags in `resolveLocale`.
 2. Add `src/catalogs/<id>.json` and its loader in `src/index.ts`.
-3. Run `pnpm typecheck` and `pnpm test`.
+3. Add the native name to `.github/ISSUE_TEMPLATE/translation.yml`.
+4. Run `pnpm typecheck` and `pnpm test`.
+
+## Translation quality
+
+Translations are made with AI. Settings says so next to the language choice and links to the `translation.yml` issue form, which opens on GitHub only when the user follows the link.
 
 ## Alternatives
 
