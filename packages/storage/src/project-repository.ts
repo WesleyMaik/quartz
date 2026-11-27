@@ -122,7 +122,19 @@ export class ProjectRepository {
       });
     });
     const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = source;
-    return this.create({ ...rest, title }, files);
+    const created = await this.create({ ...rest, title }, files);
+    if (created.ok) await this.copyThumbnail(id, created.value.id);
+    return created;
+  }
+
+  /** Best effort: a copy without a thumbnail gets one on its first compile. */
+  private async copyThumbnail(from: ProjectId, to: ProjectId): Promise<void> {
+    try {
+      const thumbnail = await this.db.thumbnails.get(from);
+      if (thumbnail !== undefined) await this.db.thumbnails.put({ ...thumbnail, projectId: to });
+    } catch (cause) {
+      console.warn("Could not copy the project thumbnail.", cause);
+    }
   }
 
   /** Deletes the project and every record that belongs to it, atomically. */
@@ -130,12 +142,19 @@ export class ProjectRepository {
     try {
       await this.db.transaction(
         "rw",
-        [this.db.projects, this.db.files, this.db.fileContents, this.db.workspaceState],
+        [
+          this.db.projects,
+          this.db.files,
+          this.db.fileContents,
+          this.db.workspaceState,
+          this.db.thumbnails,
+        ],
         async () => {
           const fileIds = await this.db.files.where("projectId").equals(id).primaryKeys();
           await this.db.fileContents.bulkDelete(fileIds);
           await this.db.files.where("projectId").equals(id).delete();
           await this.db.workspaceState.delete(id);
+          await this.db.thumbnails.delete(id);
           await this.db.projects.delete(id);
         },
       );

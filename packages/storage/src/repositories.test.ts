@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { QuartzDatabase } from "./database";
 import { FileRepository } from "./file-repository";
 import { ProjectRepository } from "./project-repository";
+import { ThumbnailRepository } from "./thumbnail-repository";
 
 const path = (value: string): ProjectPath => {
   const result = parseProjectPath(value);
@@ -82,6 +83,37 @@ describe("ProjectRepository", () => {
     expect(await db.projects.count()).toBe(0);
     expect(await db.files.count()).toBe(0);
     expect(await db.fileContents.count()).toBe(0);
+  });
+});
+
+describe("ThumbnailRepository", () => {
+  const record = (projectId: Parameters<ThumbnailRepository["get"]>[0]) => ({
+    projectId,
+    image: new Blob(["img"], { type: "image/webp" }),
+    sourceKey: "build-1",
+  });
+
+  it("keeps one thumbnail per project, copies it on duplicate and drops it on delete", async () => {
+    const thumbnails = new ThumbnailRepository(db);
+    const project = await createProject();
+    await thumbnails.save(record(project.id));
+    await thumbnails.save({ ...record(project.id), sourceKey: "build-2" });
+    expect(await db.thumbnails.count()).toBe(1);
+
+    const copy = await projects.duplicate(project.id, "Copy");
+    if (!copy.ok) throw new Error(copy.error.message);
+    expect((await thumbnails.get(copy.value.id))?.sourceKey).toBe("build-2");
+
+    await projects.delete(project.id);
+    expect(await thumbnails.get(project.id)).toBeUndefined();
+  });
+
+  it("does not save a thumbnail for a deleted project", async () => {
+    const thumbnails = new ThumbnailRepository(db);
+    const project = await createProject();
+    await projects.delete(project.id);
+    await thumbnails.save(record(project.id));
+    expect(await db.thumbnails.count()).toBe(0);
   });
 });
 
