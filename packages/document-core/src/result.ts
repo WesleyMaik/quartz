@@ -17,7 +17,15 @@ export type QuartzErrorCode =
   | "storage.unavailable"
   | "storage.failed"
   | "upload.limit_exceeded"
-  | "archive.export_failed";
+  | "archive.export_failed"
+  | "archive.invalid"
+  | "archive.too_large"
+  | "archive.too_many_entries"
+  | "archive.invalid_path"
+  | "archive.duplicate_entry"
+  | "archive.unsupported_entry"
+  | "archive.bomb_suspected"
+  | "archive.no_document";
 
 export interface QuartzError {
   readonly code: QuartzErrorCode;

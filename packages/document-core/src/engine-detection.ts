@@ -35,27 +35,77 @@ function typstScore(file: DetectionInput): number {
   return score;
 }
 
+interface ScoredEntry extends DetectionResult {
+  readonly score: number;
+}
+
+/** Documents that look like a root, best first; ties keep the input order. */
+function scoreEntries(files: readonly DetectionInput[]): ScoredEntry[] {
+  const scored: ScoredEntry[] = [];
+  for (const file of files) {
+    const result = describeEntry(file);
+    if (result === undefined) continue;
+    const score = result.engine === "latex" ? latexScore(file) : typstScore(file);
+    if (score >= 5) scored.push({ ...result, score });
+  }
+  return scored.sort((a, b) => b.score - a.score);
+}
+
+/** Compiler settings for using `file` as the entry; undefined unless it is LaTeX or Typst. */
+function describeEntry(file: DetectionInput): DetectionResult | undefined {
+  if (file.path.endsWith(".tex")) {
+    const variant = XELATEX_HINT.test(file.text) ? "xelatex" : "pdflatex";
+    return { engine: "latex", entry: file.path, compiler: { engine: "latex", variant } };
+  }
+  if (file.path.endsWith(".typ")) {
+    return { engine: "typst", entry: file.path, compiler: { engine: "typst" } };
+  }
+  return undefined;
+}
+
+const withoutScore = ({ engine, entry, compiler }: DetectionResult): DetectionResult => ({
+  engine,
+  entry,
+  compiler,
+});
+
 /**
  * Detects engine and entry point from file contents, never from an archive name.
  * Returns undefined when no candidate looks like a document root.
  */
 export function detectEngine(files: readonly DetectionInput[]): DetectionResult | undefined {
-  let best: { file: DetectionInput; engine: Engine; score: number } | undefined;
+  const best = scoreEntries(files)[0];
+  return best === undefined ? undefined : withoutScore(best);
+}
 
-  for (const file of files) {
-    const candidate = file.path.endsWith(".tex")
-      ? { engine: "latex" as const, score: latexScore(file) }
-      : file.path.endsWith(".typ")
-        ? { engine: "typst" as const, score: typstScore(file) }
-        : undefined;
-    if (candidate === undefined || candidate.score < 5) continue;
-    if (best === undefined || candidate.score > best.score) best = { file, ...candidate };
-  }
+export interface EntryDetection {
+  /** Possible main documents, most likely first. Empty when there is no LaTeX or Typst file. */
+  readonly candidates: readonly DetectionResult[];
+  /** The candidate that can be used without asking the user. */
+  readonly suggested: DetectionResult | undefined;
+}
 
-  if (best === undefined) return undefined;
-  const compiler: CompilerConfig =
-    best.engine === "latex"
-      ? { engine: "latex", variant: XELATEX_HINT.test(best.file.text) ? "xelatex" : "pdflatex" }
-      : { engine: "typst" };
-  return { engine: best.engine, entry: best.file.path, compiler };
+const isMain = (entry: string): boolean => /(^|\/)main\.(tex|typ)$/.test(entry);
+const depth = (entry: string): number => entry.split("/").length;
+
+/**
+ * Main-document candidates for an imported project. A single candidate, or a single `main.*` closest
+ * to the root, is suggested; anything else is the user's choice. When no file looks like a root,
+ * every LaTeX and Typst file is offered.
+ */
+export function findEntryCandidates(files: readonly DetectionInput[]): EntryDetection {
+  const roots = scoreEntries(files).filter(
+    // Typst has no document marker: below the root only `main.typ` counts as a candidate.
+    (item) => item.engine === "latex" || isRoot(item.entry) || isMain(item.entry),
+  );
+  const candidates =
+    roots.length > 0
+      ? roots.map(withoutScore)
+      : files.map(describeEntry).filter((item) => item !== undefined);
+  if (candidates.length <= 1) return { candidates, suggested: candidates[0] };
+
+  const mains = candidates.filter((item) => isMain(item.entry));
+  const shallowest = Math.min(...mains.map((item) => depth(item.entry)));
+  const preferred = mains.filter((item) => depth(item.entry) === shallowest);
+  return { candidates, suggested: preferred.length === 1 ? preferred[0] : undefined };
 }

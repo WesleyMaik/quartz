@@ -14,6 +14,10 @@ export interface UploadCandidate {
 
 export type SkipReason = "system_file" | "invalid_path" | "too_large" | "duplicate";
 
+/** True when any segment of `path` is clutter such as `.DS_Store` or `__MACOSX`. */
+export const isSystemPath = (path: string): boolean =>
+  path.split("/").some((segment) => SYSTEM_SEGMENT.test(segment));
+
 export interface PlannedUpload {
   /** Index into the candidate list, so callers can find the matching `File`. */
   readonly index: number;
@@ -51,7 +55,7 @@ export function planUpload(
   candidates.forEach((candidate, index) => {
     const relative = candidate.relativePath.replace(/^\/+/, "");
     const segments = relative.split("/");
-    if (segments.some((segment) => SYSTEM_SEGMENT.test(segment))) {
+    if (isSystemPath(relative)) {
       skipped.push({ relativePath: relative, reason: "system_file" });
       return;
     }
