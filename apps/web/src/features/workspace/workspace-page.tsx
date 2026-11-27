@@ -17,6 +17,7 @@ import { EditorPane, type EditorPaneHandle } from "./editor-pane";
 import { FileExplorer } from "./file-explorer";
 import { OutlinePanel } from "./outline-panel";
 import { ProblemsPanel } from "./problems-panel";
+import { ResizableSidebar } from "./resizable-sidebar";
 import { useOutline } from "./use-outline";
 import { type SaveStatus, WorkspaceHeader } from "./workspace-header";
 
@@ -353,22 +354,7 @@ function Workspace({ project }: { readonly project: Project }) {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 pr-2 pb-2">
-          <div
-            className={cn(
-              "shrink-0 overflow-hidden transition-[width] duration-300 ease-out",
-              sidebar.collapsed ? "w-2" : "w-60",
-            )}
-            inert={sidebar.collapsed}
-          >
-            <div
-              className={cn(
-                "h-full w-58 transition-[opacity,translate] duration-300 ease-out",
-                sidebar.collapsed && "-translate-x-6 opacity-0",
-              )}
-            >
-              {explorer(open)}
-            </div>
-          </div>
+          <ResizableSidebar collapsed={sidebar.collapsed}>{explorer(open)}</ResizableSidebar>
           <ResizableGroup orientation="horizontal" id="quartz-workspace-main" className="min-w-0">
             <ResizablePanel id="editor" defaultSize="50%" minSize="25%">
               <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm">

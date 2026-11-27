@@ -1,8 +1,16 @@
 import type { OutlineNode } from "@qrtz/document-core";
-import { cn, Icon } from "@qrtz/ui";
+import { cn, Icon, ResizeSeparator } from "@qrtz/ui";
 import { ArrowRight01Icon } from "@qrtz/ui/icons";
 import { useState } from "react";
 import { useCollapsed } from "../../app/use-collapsed";
+import { useParentHeight } from "../../app/use-parent-height";
+import { useResizableSize } from "../../app/use-resizable-size";
+
+const DEFAULT_HEIGHT = 240;
+/** Header plus about two headings. */
+const MIN_HEIGHT = 104;
+/** Room that always remains for the file tree above. */
+const MIN_FILES_HEIGHT = 160;
 
 const chevron = (open: boolean) =>
   cn("shrink-0 transition-transform duration-200 ease-out", open && "rotate-90");
@@ -17,6 +25,9 @@ export function OutlinePanel({
 }) {
   const panel = useCollapsed("quartz:outline");
   const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
+  const { ref, height: available } = useParentHeight();
+  const limits = { min: MIN_HEIGHT, max: Math.max(MIN_HEIGHT, available - MIN_FILES_HEIGHT) };
+  const { size, resize, reset } = useResizableSize("quartz:outline-height", DEFAULT_HEIGHT, limits);
 
   const toggle = (key: string) =>
     setClosed((current) => {
@@ -65,9 +76,23 @@ export function OutlinePanel({
 
   return (
     <nav
+      ref={ref}
       aria-label="Document outline"
-      className={cn("flex shrink-0 flex-col border-t", !panel.collapsed && "max-h-[50%]")}
+      className="relative flex shrink-0 flex-col border-t"
+      style={panel.collapsed ? undefined : { height: size }}
     >
+      {panel.collapsed ? null : (
+        <ResizeSeparator
+          label="Resize outline"
+          edge="top"
+          value={size}
+          min={limits.min}
+          max={limits.max}
+          onResize={resize}
+          onReset={reset}
+          className="absolute inset-x-0 -top-1 z-10"
+        />
+      )}
       <button
         type="button"
         className="flex h-11 shrink-0 cursor-pointer items-center gap-1.5 px-2 text-left font-semibold text-sm tracking-tight"
