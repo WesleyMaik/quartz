@@ -31,4 +31,4 @@ Then add an `OpfsBlobStore` behind the `FileRepository` interface for binary con
 
 - One storage library, one migration path.
 - Quota is shared with Cache Storage for engine assets; the storage panel shows both.
-- Users must export `.qrtz` for real backups; the UI must make that clear (FR-ST-2).
+- Users must export ZIP archives for real backups; the UI must make that clear (FR-ST-2).

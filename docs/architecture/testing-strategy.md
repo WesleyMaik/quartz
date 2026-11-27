@@ -20,9 +20,8 @@ Not used: Jest (overlaps Vitest), Cypress (overlaps Playwright), ESLint/Prettier
 |---|---|
 | `parseProjectPath` | `..`, `./a`, `a//b`, `/abs`, `C:\x`, `a\b`, NUL, NFC vs NFD duplicates, reserved names (`CON`), 1024-byte limit |
 | Domain models | engine detection from content (`\documentclass`, `#set`, `#import`), entry-point resolution, file kind inference |
-| Manifest | valid v1, unknown optional fields preserved, missing required fields, future major version rejected, future minor accepted |
-| Archive writer | deterministic output for same input (sorted entries, fixed timestamps), checksums, optional artifacts |
-| Archive reader | traversal, duplicates, bomb (ratio and absolute), oversize entry, checksum mismatch, missing manifest (falls back to plain ZIP import) |
+| Archive writer | deterministic output for same input (sorted entries, fixed timestamps), byte-identical contents, empty folders |
+| Archive reader | traversal, duplicates, bomb (ratio and absolute), oversize entry, single top-level folder |
 | Migrations | v1 fixture → current |
 | Compiler normalization | LaTeX log fixtures → diagnostics (golden files); Typst diagnostic fixtures |
 | Compile queue | coalescing, stale discard, cancellation, timeout |
@@ -34,7 +33,7 @@ Not used: Jest (overlaps Vitest), Cypress (overlaps Playwright), ESLint/Prettier
 
 - IndexedDB: create/read/update/delete projects; `applyBatch` atomicity (inject failure mid-batch → nothing written); quota error mapping (simulate by stubbing `put` to throw `QuotaExceededError`); Dexie upgrade from v1 fixtures.
 - Recovery: write, close the page context, reopen, verify content and workspace state.
-- Import/export roundtrip: export → import → byte-identical file contents and equal manifest (except IDs when imported as copy).
+- Import/export roundtrip: export → import → byte-identical file contents and folders.
 - Worker communication: Comlink round-trip, transferables (source buffer detached after transfer), worker crash → host restarts and reports `error`.
 - Compiler init/output: Typst `hello.typ` → PDF starts with `%PDF-`; LaTeX `article.tex` → PDF; multi-file with `\input` and figures; BibTeX run.
 - PDF viewer: load bytes, page count, search finds known text.
@@ -50,10 +49,10 @@ Not used: Jest (overlaps Vitest), Cypress (overlaps Playwright), ESLint/Prettier
 6. Assert PDF preview shows the edited text (PDF.js text layer).
 7. Reload the page.
 8. Assert project, files and open tabs are restored.
-9. Export `.qrtz` (capture download).
+9. Export the ZIP (capture download).
 10. Delete the project (confirm dialog).
-11. Import the captured `.qrtz`.
-12. Assert all files, folders and metadata are restored (compare against the pre-export snapshot).
+11. Import the captured ZIP.
+12. Assert all files and folders are restored (compare against the pre-export snapshot).
 13. Create a Typst project from template.
 14. Compile and assert preview text.
 15. Agent tools: via `page.evaluate` using `document.modelContext.getTools()`/`executeTool()` (polyfill or native): `list_files`, `read_files`, `edit_file` → change set pending → approve in UI → file updated → `compile_project` → `get_diagnostics`; `delete_path` requires approval; undo restores.

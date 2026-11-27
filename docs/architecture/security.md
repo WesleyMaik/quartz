@@ -11,7 +11,7 @@
 
 | Boundary | Untrusted side |
 |---|---|
-| Archive import | `.qrtz`/ZIP files from anywhere |
+| Archive import | ZIP files from anywhere |
 | Project content | `.tex`, `.typ`, `.bib`, images, fonts, PDFs inside projects (may come from collaborators or the internet) |
 | Compiler output | PDF bytes and logs produced from untrusted input |
 | Agent tool calls | Arguments from an external agent that may be confused or prompt-injected |
@@ -23,7 +23,7 @@ Out of scope: a compromised browser or OS, malicious browser extensions with hos
 ## 3. Threats and mitigations
 
 ### T1 Malicious archive (path traversal, absolute paths, duplicates, bombs)
-- Every entry name goes through `parseProjectPath` (see [qrtz-format.md](../specifications/qrtz-format.md#7-import-validation)): reject `..`, leading `/`, drive letters, backslashes (normalized then re-checked), NUL and control characters, Windows reserved names, paths > 1024 bytes or > 32 segments.
+- Every entry name goes through `parseProjectPath` (see [project-archive.md](../specifications/project-archive.md#3-import-validation)): reject `..`, leading `/`, drive letters, backslashes (normalized then re-checked), NUL and control characters, Windows reserved names, paths > 1024 bytes or > 32 segments.
 - Duplicate entries after Unicode NFC + case-fold comparison are rejected (case-insensitive file systems on export).
 - Limits enforced **while inflating** (streaming), not from headers: per-entry 100 MB, total 1 GB, entry count 10,000, per-entry ratio > 200:1 for entries > 1 MB rejected.
 - Nothing is written to storage until the whole archive validates.

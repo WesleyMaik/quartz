@@ -4,7 +4,7 @@ Desktop-first (≥ 1280 px primary, ≥ 1024 px supported, < 1024 px read-mostly
 
 ## 1. Screens
 
-1. **Dashboard** (`/`): recent projects (title, engine badge, updated time, size), "New project" (template picker), "Import" (drop zone accepting `.qrtz`, `.zip`, `.tex`, `.typ`, folders), storage meter with persistence state and "Export all" action.
+1. **Dashboard** (`/`): recent projects (first-page thumbnail, title, engine badge, updated time, size), "New project" (template picker), "Import" (drop zone accepting `.zip`, `.tex`, `.typ`, folders), storage meter with persistence state and "Export all" action.
 2. **Workspace** (`/p/:id`).
 
 ## 2. Workspace layout
@@ -30,7 +30,7 @@ Desktop-first (≥ 1280 px primary, ≥ 1024 px supported, < 1024 px read-mostly
 
 | Element | Behavior |
 |---|---|
-| Project title | Inline rename; dropdown with Duplicate, Export `.qrtz`, Export source ZIP, Export PDF, Project settings, Delete |
+| Project title | Inline rename; dropdown with Duplicate, Download as ZIP, Export PDF, Project settings, Delete |
 | Engine badge | `LaTeX · pdfLaTeX` / `LaTeX · XeLaTeX` / `Typst`; click opens compiler settings |
 | Save status | `Saved`, `Saving…`, `Unsaved changes`, `Not saved: <reason>` (destructive color) |
 | Compile status | Icon + text from the status model; click opens the log; shows progress during `initializing` |
@@ -71,7 +71,7 @@ Tabs: **Activity** and **Reviews (n)**.
 
 ## 8. Command palette (Ctrl/Cmd+K)
 
-Groups: Files (fuzzy open), Commands (Compile, Toggle auto compile, Toggle explorer/preview/agent panel, Switch theme, New file, New project, Export `.qrtz`, Export PDF, Import), Projects (switch), Settings. Built on shadcn `Command` (cmdk). Every command has an ID used by keyboard shortcuts, so shortcuts and palette share one registry.
+Groups: Files (fuzzy open), Commands (Compile, Toggle auto compile, Toggle explorer/preview/agent panel, Switch theme, New file, New project, Download as ZIP, Export PDF, Import), Projects (switch), Settings. Built on shadcn `Command` (cmdk). Every command has an ID used by keyboard shortcuts, so shortcuts and palette share one registry.
 
 ## 9. Keyboard shortcuts (defaults)
 
@@ -92,6 +92,6 @@ Groups: Files (fuzzy open), Commands (Compile, Toggle auto compile, Toggle explo
 
 ## 11. Storage and safety UX
 
-- First project creation shows a one-time notice: "Your projects are stored only in this browser. Clearing site data deletes them. Export .qrtz backups." with "Keep data persistent" (calls `persist()`).
+- First project creation shows a one-time notice: "Your projects are stored only in this browser. Clearing site data deletes them. Export ZIP backups." with "Keep data persistent" (calls `persist()`).
 - Settings → Storage: usage, quota, persisted state, cached engine assets size with "Clear engine cache".
 - Delete project requires typing nothing but confirming in a destructive dialog that names the project and offers "Export first".

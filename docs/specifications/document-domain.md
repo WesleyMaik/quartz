@@ -16,7 +16,7 @@ Branded types are created only by parsers (`parseProjectPath`, `newProjectId`), 
 
 ## 2. Paths
 
-- POSIX separators, relative to the project root, NFC-normalized, no leading/trailing slash, rules in [qrtz-format.md §7](qrtz-format.md#7-import-validation).
+- POSIX separators, relative to the project root, NFC-normalized, no leading/trailing slash, rules in [project-archive.md §3](project-archive.md#3-import-validation).
 - `parseProjectPath(input: string): Result<ProjectPath, PathError>` is the only constructor, used by UI, import, storage and agent tools (one implementation, DRY).
 - Folders are implicit from file paths; empty folders are stored as `FileEntry` with `kind: "folder"`.
 - References inside documents (`\input{sections/intro}`, `#include "sections/intro.typ"`, `\includegraphics{figures/a}`) are resolved relative to the referencing file for Typst and relative to the project root for LaTeX (TeX's working directory), matching the native tools.

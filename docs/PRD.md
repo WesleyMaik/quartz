@@ -44,7 +44,7 @@ Quartz ships no model, no model gateway, no API-key management, no account and n
 | Files | Nested folders, create, rename, move, delete, upload assets (images, PDFs, fonts, `.bib`). |
 | Editor | CodeMirror 6, tabs, syntax highlighting for LaTeX and Typst, search/replace, diagnostics from the compiler, basic completion (commands, labels, citation keys). |
 | Persistence | IndexedDB autosave, recovery after reload, save status, quota display, persistence request. |
-| Portability | Export/import `.qrtz`, import ZIP, import single `.tex`/`.typ`, export source ZIP, export PDF. |
+| Portability | Export a standard source ZIP, import ZIP, import single `.tex`/`.typ`, export PDF. |
 | Compilation | Typst in a worker; LaTeX (pdfLaTeX and XeLaTeX via Siglum, BibTeX; no Biber in MVP, so `biblatex` requires `backend=bibtex`) in a worker; manual and debounced auto compile; logs; diagnostics; last good PDF kept. |
 | Preview | PDF.js viewer: pages, zoom, page navigation, search, text selection, download. |
 | Agent | WebMCP tools for inspect, read, write (staged), compile, diagnostics; review queue with diff and approve/reject; activity timeline; undo of applied change sets. |
@@ -66,14 +66,14 @@ IDs are referenced by [roadmap/acceptance-criteria.md](roadmap/acceptance-criter
 - **FR-FS-1** Files and folders use normalized POSIX relative paths validated by one shared function.
 - **FR-ED-1** Unsaved indicator per tab; autosave after 750 ms idle and on blur/visibility change.
 - **FR-ST-1** Show storage usage and whether persistent storage is granted; warn at 80 % of quota.
-- **FR-ST-2** Explain in the UI that clearing site data deletes projects, and offer `.qrtz` export.
+- **FR-ST-2** Explain in the UI that clearing site data deletes projects, and offer ZIP export.
 - **FR-CMP-1** Compile on demand (Ctrl/Cmd+S or Ctrl/Cmd+Enter) and optionally on idle (default 1 s debounce for Typst, 2.5 s for LaTeX, configurable).
 - **FR-CMP-2** A failed compile never replaces the last successful PDF; the preview shows a stale badge.
 - **FR-CMP-3** Diagnostics map to file and line when the engine reports them.
 - **FR-AG-1** When WebMCP is available, Quartz registers its tools; when not, the agent panel explains how to enable it and the rest of the app is unaffected.
 - **FR-AG-2** Agent write operations create change sets; delete operations always require explicit user approval.
 - **FR-AG-3** Every agent tool call appears in the activity timeline with its real status, arguments summary and result summary.
-- **FR-IO-1** `.qrtz` import validates paths, sizes, manifest and checksums before writing anything to storage.
+- **FR-IO-1** ZIP import validates paths and sizes before writing anything to storage.
 
 ## 7. Non-functional requirements
 

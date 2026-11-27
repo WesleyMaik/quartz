@@ -32,6 +32,7 @@ db.version(1).stores({
   changeSets:     "id, projectId, status, createdAt",
   artifacts:      "id, projectId, kind",       // last good PDF (optional), synctex later
   workspaceState: "projectId",                 // open tabs, layout, cursor positions
+  thumbnails:     "projectId",                 // added in version 2
   preferences:    "key",
   meta:           "key",                       // db-level info, migration markers
 });
@@ -39,6 +40,7 @@ db.version(1).stores({
 
 Design choices:
 
+- **Thumbnails are derived data.** After a successful build, the first PDF page is rendered to a 240 px wide WebP (JPEG where WebP encoding is unavailable), usually a few kilobytes, one per project. It is replaced only when the sources changed, deleted with the project, never exported, and a project that has not been compiled shows an icon.
 - **Metadata and contents are separate tables.** Listing a file tree never loads file bodies.
 - **Text stored as strings, binaries as `Blob`.** Blobs in IndexedDB are supported in all target browsers and avoid base64 inflation.
 - **`files.revision`** is a monotonically increasing integer per file, used for optimistic concurrency by agent tools (`expectedRevision`) and for compile staleness.
@@ -84,7 +86,7 @@ Recovery after reload: open tabs and cursor positions come from `workspaceState`
 
 - On startup and after large writes: `navigator.storage.estimate()` → show usage/quota in settings and in the dashboard footer; warn at 80 %, block imports that would exceed 95 %.
 - After the user creates or imports their first project: call `navigator.storage.persist()` once, from a user gesture where possible. Record the result; show `navigator.storage.persisted()` state in settings.
-- **[FACT]** Browsers may deny persistence or grant it heuristically; Safari evicts script-writable storage for sites not used for 7 days unless installed as a web app (WebKit tracking prevention policy, https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/). The UI must say so and push `.qrtz` export as backup.
+- **[FACT]** Browsers may deny persistence or grant it heuristically; Safari evicts script-writable storage for sites not used for 7 days unless installed as a web app (WebKit tracking prevention policy, https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/). The UI must say so and push ZIP export as backup.
 - `QuotaExceededError` maps to `storage.quota_exceeded`; the write is rolled back and the user is offered: delete old artifacts, export and delete projects.
 - Storage unavailable (private modes that disable IndexedDB, blocked storage): app opens in a "temporary session" mode with a persistent banner; export remains possible.
 
@@ -106,4 +108,4 @@ Recovery after reload: open tabs and cursor positions come from `workspaceState`
 ## 9. Migrations
 
 - Dexie version bumps with `upgrade()` functions; each upgrade has a fixture-based test.
-- Before a destructive migration, the app writes an automatic `.qrtz` backup of each project into memory and offers download if the upgrade fails.
+- Before a destructive migration, the app writes an automatic ZIP backup of each project into memory and offers download if the upgrade fails.

@@ -1,35 +1,30 @@
-# ADR-003: Project Format (.qrtz)
+# ADR-003: Project Format (standard ZIP)
 
-Status: Accepted, confirm with Spike 3. Date: 2026-11-26.
+Status: Accepted. Date: 2026-11-27. Replaces the 2026-11-26 decision for a `.qrtz` container.
 
 ## Context
 
-Users need a portable, vendor-independent backup and exchange format that preserves sources byte-for-byte, works offline and can evolve.
+Users need a portable, vendor-independent backup and exchange format that preserves sources byte-for-byte and works offline.
 
 ## Decision
 
-- `.qrtz` is a ZIP archive (PKZIP, Deflate or Stored, no encryption, ZIP64 allowed) with a fixed layout: an uncompressed `mimetype` first entry, a `manifest.json`, sources under `files/`, Quartz settings under `quartz/`, and optional build outputs under `artifacts/`. Specification: [qrtz-format.md](../specifications/qrtz-format.md).
-- Library: **fflate** (MIT, zero dependencies, streaming zip/unzip, async workers). **[FACT]** https://github.com/101arrowz/fflate
-- Integrity: SHA-256 per file via `crypto.subtle.digest`, recorded in the manifest.
-- Versioning: `formatVersion` as `"major.minor"`. Readers accept the same major with any minor and preserve unknown fields; reject a higher major with a clear error.
+- A project is exported as a standard `.zip` containing its files at the archive root. Specification: [project-archive.md](../specifications/project-archive.md).
+- No custom extension, `mimetype` marker, manifest or Quartz-specific entry.
+- Library: **fflate** (MIT, zero dependencies, async workers). **[FACT]** https://github.com/101arrowz/fflate
 
-## Changes from the initial proposal
+## Changes from the previous decision
 
-| Proposal | Change | Reason |
-|---|---|---|
-| `metadata/` folder | Renamed `quartz/` | Makes it obvious which files are app-specific and safe to ignore by other tools. |
-| No mimetype marker | Add first entry `mimetype` = `application/vnd.quartz.project+zip`, stored uncompressed | Same technique as EPUB/ODF: lets Quartz and other tools sniff the type from bytes, not from the extension (FR-PRJ-2). |
-| Checksums only | Checksums plus a `manifestDigest` is **not** added | A digest of the manifest inside the manifest adds no security (anyone can recompute it); integrity covers accidental corruption, not tampering. Signatures are deferred. |
-| `artifacts/compiled.pdf` | `artifacts/<entry-stem>.pdf`, optional, excluded by default | Explicit naming; keeps archives small. |
+The `.qrtz` format (ZIP with `mimetype`, `manifest.json`, `files/`, `quartz/` and optional `artifacts/`) was dropped before any code shipped. A private extension and layout suggest lock-in and require Quartz, or manual restructuring, to reuse the project elsewhere.
 
 ## Rejected alternatives
 
-- **Plain directory export only:** not a single file, harder to share; still offered as "Export source ZIP" (without `quartz/`).
-- **Tar/tar.gz:** worse native OS support on Windows/macOS for double-click inspection.
+- **`.qrtz` container:** see above.
+- **Optional metadata file inside the ZIP:** would restore project settings on import, at the price of an app-specific file in every export. Revisit only if content detection proves insufficient.
 - **JSZip:** larger and slower than fflate, no streaming inflate with size enforcement.
-- **SQLite file:** opaque to users, violates format-first.
 
 ## Consequences
 
-- Any unzip tool opens a `.qrtz`; renaming it to `.zip` shows the original files under `files/`.
+- Exports open directly in Overleaf, local toolchains and any unzip tool.
+- Engine, main document and LaTeX variant are not stored; import detects them or asks.
+- No per-file checksums beyond the CRC-32 that ZIP already records.
 - Import must treat the archive as hostile (see [security.md](../architecture/security.md#t1-malicious-archive-path-traversal-absolute-paths-duplicates-bombs)).

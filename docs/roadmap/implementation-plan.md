@@ -12,7 +12,7 @@ Detailed tasks: [task-backlog.md](task-backlog.md). Acceptance criteria: [accept
 ```mermaid
 flowchart LR
   P0[Phase 0 Feasibility] --> P1[Phase 1 Foundation]
-  P1 --> P2[Phase 2 Domain + Storage + .qrtz]
+  P1 --> P2[Phase 2 Domain + Storage + ZIP]
   P2 --> P3[Phase 3 Workspace + Editor + Preview]
   P3 --> P4a[Phase 4a Typst compile]
   P4a --> P4b[Phase 4b LaTeX compile]
@@ -42,12 +42,12 @@ flowchart LR
 - **Testing**: CI runs lint, typecheck, unit, browser tests, e2e smoke.
 - **Risks**: shadcn CLI monorepo alias issues (Spike 6 covers).
 
-## Phase 2: Domain, storage and .qrtz (L)
+## Phase 2: Domain, storage and ZIP (L)
 
-- **Deliverables**: `document-core` (paths, models, engine detection, templates, change-set model), `storage` (Dexie schema v1, repositories, quota helpers), `project-format` (writer, reader, validation, ZIP and single-file import), services (`ProjectService`, `FileService`), dashboard UI (list, create, rename, duplicate, delete, import, export).
+- **Deliverables**: `document-core` (paths, models, engine detection, templates, change-set model), `storage` (Dexie schema v1, repositories, quota helpers), `project-format` (ZIP writer, reader, validation, single-file import), services (`ProjectService`, `FileService`), dashboard UI (list, create, rename, duplicate, delete, import, export).
 - **Dependencies**: Phase 1.
 - **Acceptance**: AC-2.*.
-- **Testing**: unit (paths, manifest, archive, detection), browser integration (IndexedDB, roundtrip), e2e (create → reload → export → delete → import).
+- **Testing**: unit (paths, archive, detection), browser integration (IndexedDB, roundtrip), e2e (create → reload → export → delete → import).
 - **Risks**: Dexie compound-unique behavior; Safari Blob quirks (Spike 4).
 
 ## Phase 3: Workspace, editor and preview (L)

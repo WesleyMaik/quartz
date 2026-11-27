@@ -21,7 +21,7 @@ quartz/
 ├── packages/
 │   ├── ui/                      # shadcn (Base UI) + Smooth UI components, tokens, theme
 │   ├── document-core/           # pure domain: models, paths, engine detection, zod schemas
-│   ├── project-format/          # .qrtz read/write, ZIP import, manifest, migrations
+│   ├── project-format/          # standard ZIP export and import
 │   ├── storage/                 # Dexie database, repositories, quota helpers
 │   ├── editor/                  # CodeMirror 6 setup, language extensions (latex/, typst/)
 │   ├── compiler-core/           # contracts, worker host, queue, diagnostics normalization

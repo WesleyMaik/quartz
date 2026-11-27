@@ -35,7 +35,7 @@ Quartz takes the opposite approach:
 - **Your documents stay on your device.** Projects are stored in your browser. Nothing is uploaded, and there is no account to create.
 - **Compilation happens locally.** LaTeX and Typst compile to PDF with WebAssembly, in Web Workers, inside your browser tab. There is no hidden remote compiler.
 - **Your AI, your choice.** Quartz does not ship a model or ask for API keys. It exposes its project operations as browser tools through [WebMCP](https://developer.chrome.com/docs/ai/webmcp/), so the agent you already use can read, edit, review and compile your documents, and you approve every change. _(Planned, see the [roadmap](docs/roadmap/implementation-plan.md).)_
-- **Your files stay portable.** Original `.tex`, `.typ` and `.bib` files are never rewritten or hidden. A `.qrtz` project file is a plain ZIP you can open with any tool. _(Planned.)_
+- **Your files stay portable.** Original `.tex`, `.typ` and `.bib` files are never rewritten or hidden. A project downloads as a standard `.zip` of your files, with no custom format.
 - **Static hosting only.** The whole application is static files: any static host can serve it, and it keeps working offline once the engines are cached.
 
 ## Features
@@ -50,8 +50,10 @@ Quartz takes the opposite approach:
 | LaTeX compilation (pdfLaTeX, XeLaTeX, BibTeX) with a self-hosted TeX Live 2026 runtime | ✅         |
 | Diagnostics mapped to file and line, compile log, last successful PDF preserved        | ✅         |
 | PDF preview with zoom, page navigation, text selection and download                    | ✅         |
+| First-page thumbnails in the project list                                              | ✅         |
 | Light and dark themes                                                                  | ✅         |
-| `.qrtz` import and export, ZIP and single-file import                                  | 🚧 Planned |
+| Download a project as a standard ZIP                                                   | ✅         |
+| ZIP and single-file import                                                             | 🚧 Planned |
 | WebMCP agent tools with staged change review and undo                                  | 🚧 Planned |
 | Offline PWA, command palette, bibliography tools, SyncTeX navigation                   | 🚧 Planned |
 
@@ -157,7 +159,7 @@ Cloudflare Pages limits single files to 25 MiB, and three engine files are large
 
 ## Your data
 
-Projects are stored in your browser's storage for this site. Clearing site data, or the browser evicting storage, deletes them. Quartz asks the browser for persistent storage, but the browser decides whether to grant it. Until `.qrtz` export lands, treat Quartz as a preview and keep copies of important work.
+Projects are stored in your browser's storage for this site. Clearing site data, or the browser evicting storage, deletes them. Quartz asks the browser for persistent storage, but the browser decides whether to grant it. Download projects as ZIP regularly to keep backups of important work. Importing a ZIP back is not available yet.
 
 ## Documentation
 

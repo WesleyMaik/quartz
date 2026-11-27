@@ -42,7 +42,7 @@ Every technical claim in this set is tagged so readers can tell how much weight 
 - [final-review.md](architecture/final-review.md)
 
 ### Specifications
-- [qrtz-format.md](specifications/qrtz-format.md)
+- [project-archive.md](specifications/project-archive.md)
 - [document-domain.md](specifications/document-domain.md)
 - [compiler-contracts.md](specifications/compiler-contracts.md)
 - [webmcp-tools.md](specifications/webmcp-tools.md)
@@ -52,7 +52,7 @@ Every technical claim in this set is tagged so readers can tell how much weight 
 - [latex-wasm.md](technical-spikes/latex-wasm.md)
 - [typst-wasm.md](technical-spikes/typst-wasm.md)
 - [browser-storage.md](technical-spikes/browser-storage.md)
-- [qrtz-archive.md](technical-spikes/qrtz-archive.md)
+- [project-archive.md](technical-spikes/project-archive.md)
 - [webmcp-feasibility.md](technical-spikes/webmcp-feasibility.md)
 - [smoothui-integration.md](technical-spikes/smoothui-integration.md)
 

@@ -22,7 +22,7 @@ Quartz is a browser-only, local-first scientific writing workspace for LaTeX and
 apps/web               composition root, React features, application services
 packages/ui            shadcn/ui (Base UI) + Smooth UI components, theme; React only, no domain imports
 packages/document-core pure domain: models, paths, detection, templates; depends only on zod
-packages/project-format .qrtz and ZIP import/export; depends on document-core, fflate
+packages/project-format standard ZIP import/export; depends on document-core, fflate
 packages/storage       Dexie database and repositories; depends on document-core
 packages/editor        CodeMirror 6 setup and language extensions; no React
 packages/compiler-core compiler contracts, EngineHost, queue; no React
@@ -43,16 +43,16 @@ Rules:
 
 ## Naming conventions
 
-| Item                   | Convention                                                            | Example                     |
-| ---------------------- | --------------------------------------------------------------------- | --------------------------- |
-| Directories and files  | kebab-case                                                            | `compile-queue.ts`          |
-| React components       | PascalCase                                                            | `FileExplorer`              |
-| Types, interfaces      | PascalCase, no `I` prefix                                             | `CompilationResult`         |
-| Variables, functions   | camelCase                                                             | `parseProjectPath`          |
-| Module-level constants | SCREAMING_SNAKE_CASE for true constants, camelCase for config objects | `MAX_ARCHIVE_ENTRIES`       |
-| Error codes            | dotted lowercase                                                      | `archive.checksum_mismatch` |
-| WebMCP tool names      | snake_case                                                            | `read_files`                |
-| Packages               | `@qrtz/<name>`                                                        | `@qrtz/document-core`       |
+| Item                   | Convention                                                            | Example                 |
+| ---------------------- | --------------------------------------------------------------------- | ----------------------- |
+| Directories and files  | kebab-case                                                            | `compile-queue.ts`      |
+| React components       | PascalCase                                                            | `FileExplorer`          |
+| Types, interfaces      | PascalCase, no `I` prefix                                             | `CompilationResult`     |
+| Variables, functions   | camelCase                                                             | `parseProjectPath`      |
+| Module-level constants | SCREAMING_SNAKE_CASE for true constants, camelCase for config objects | `MAX_ARCHIVE_ENTRIES`   |
+| Error codes            | dotted lowercase                                                      | `archive.export_failed` |
+| WebMCP tool names      | snake_case                                                            | `read_files`            |
+| Packages               | `@qrtz/<name>`                                                        | `@qrtz/document-core`   |
 
 ## Code quality rules
 
@@ -94,7 +94,7 @@ Rules:
 - Commit after every successful implementation step (lint, typecheck and relevant tests passing).
 - Use Conventional Commits with a scope: `<type>(<scope>): <subject>`, for example `feat(storage): add dexie repositories`.
 - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`, `ci`, `perf`, `style`.
-- Scope is the package or area: `document-core`, `storage`, `editor`, `ui`, `web`, `compiler-core`, `compiler-typst`, `compiler-latex`, `agent-bridge`, `repo`, `docs`.
+- Scope is the package or area: `document-core`, `storage`, `editor`, `ui`, `web`, `project-format`, `compiler-core`, `compiler-typst`, `compiler-latex`, `agent-bridge`, `repo`, `docs`.
 - Subject: short, clear, imperative, lowercase, English, no trailing period. No body.
 - Group files of the same scope into the same commit; keep each commit cohesive and split by scope.
 - Never commit secrets, build output or downloaded engine assets.
@@ -116,13 +116,13 @@ Runtime assets live in `apps/web/public/engines/` (gitignored). Playwright E2E i
 
 ## Important technical decisions
 
-| Topic         | Decision                                                                                   | Record                                                     |
-| ------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| Stack         | React 19 + Vite SPA, Turborepo, pnpm, Tailwind 4; no Next.js/vinext                        | [ADR-001](docs/decisions/ADR-001-frontend-stack.md)        |
-| Storage       | IndexedDB via Dexie is the only source of truth; no OPFS in MVP                            | [ADR-002](docs/decisions/ADR-002-browser-storage.md)       |
-| Format        | `.qrtz` = ZIP with `mimetype`, `manifest.json`, `files/`, `quartz/`, optional `artifacts/` | [ADR-003](docs/decisions/ADR-003-project-format.md)        |
-| Compilers     | Adapters in dedicated workers; typst.ts for Typst; LaTeX engine chosen in Spike 1          | [ADR-004](docs/decisions/ADR-004-compiler-architecture.md) |
-| Agents        | WebMCP via `document.modelContext`; staged change sets; activity panel, not chat           | [ADR-005](docs/decisions/ADR-005-agent-integration.md)     |
-| UI primitives | shadcn/ui on Base UI + Smooth UI                                                           | [ADR-006](docs/decisions/ADR-006-ui-primitives.md)         |
+| Topic         | Decision                                                                          | Record                                                     |
+| ------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Stack         | React 19 + Vite SPA, Turborepo, pnpm, Tailwind 4; no Next.js/vinext               | [ADR-001](docs/decisions/ADR-001-frontend-stack.md)        |
+| Storage       | IndexedDB via Dexie is the only source of truth; no OPFS in MVP                   | [ADR-002](docs/decisions/ADR-002-browser-storage.md)       |
+| Format        | Standard `.zip` of the source tree, no app-specific entries                       | [ADR-003](docs/decisions/ADR-003-project-format.md)        |
+| Compilers     | Adapters in dedicated workers; typst.ts for Typst; LaTeX engine chosen in Spike 1 | [ADR-004](docs/decisions/ADR-004-compiler-architecture.md) |
+| Agents        | WebMCP via `document.modelContext`; staged change sets; activity panel, not chat  | [ADR-005](docs/decisions/ADR-005-agent-integration.md)     |
+| UI primitives | shadcn/ui on Base UI + Smooth UI                                                  | [ADR-006](docs/decisions/ADR-006-ui-primitives.md)         |
 
 When an implementation choice conflicts with these documents, stop and update the relevant ADR first, explaining why.

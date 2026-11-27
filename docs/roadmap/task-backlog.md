@@ -8,7 +8,7 @@ Format: ID · task · depends on · size · done when. Tasks are small and indep
 |---|---|---|---|---|
 | T-0.1.1..12 | LaTeX spike steps ([latex-wasm.md](../technical-spikes/latex-wasm.md)) | none | L | Results file + verdict |
 | T-0.2.1..10 | Typst spike steps ([typst-wasm.md](../technical-spikes/typst-wasm.md)) | none | M | Results file + verdict |
-| T-0.3.1..5 | Archive spike steps ([qrtz-archive.md](../technical-spikes/qrtz-archive.md)) | none | M | Malicious corpus rejected; interop table |
+| T-0.3.1..5 | Archive spike steps ([project-archive.md](../technical-spikes/project-archive.md)) | none | M | Malicious corpus rejected; interop table |
 | T-0.4.1..6 | Storage spike steps ([browser-storage.md](../technical-spikes/browser-storage.md)) | none | M | Benchmark table |
 | T-0.5.1..8 | WebMCP spike steps ([webmcp-feasibility.md](../technical-spikes/webmcp-feasibility.md)) | none | M | Harness results |
 | T-0.6.1..6 | Smooth UI spike steps ([smoothui-integration.md](../technical-spikes/smoothui-integration.md)) | none | S | Install log + verdict |
@@ -37,7 +37,7 @@ Format: ID · task · depends on · size · done when. Tasks are small and indep
 | T-1.5.1 | vite-plugin-pwa app shell precache, update toast | T-1.2.1 | S | Offline reload shows shell |
 | T-1.5.2 | CSP meta + host header templates (`_headers`) | T-1.2.1 | S | No CSP violations in smoke test |
 
-## Phase 2: Domain, storage, .qrtz
+## Phase 2: Domain, storage, ZIP
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
@@ -49,11 +49,9 @@ Format: ID · task · depends on · size · done when. Tasks are small and indep
 | T-2.2.2 | ProjectRepository | T-2.2.1 | M | CRUD + duplicate + delete atomicity tests |
 | T-2.2.3 | FileRepository incl. `applyBatch`, `snapshot`, revisions | T-2.2.1 | M | Atomicity + conflict tests |
 | T-2.2.4 | Quota/persistence helpers + `QuotaExceededError` mapping | T-2.2.1 | S | Tests with stubs |
-| T-2.3.1 | Manifest zod schema + JSON Schema output | T-2.1.2 | S | Schema tests, unknown fields preserved |
-| T-2.3.2 | `.qrtz` writer (deterministic) | T-2.3.1 | M | Byte-identical double export |
-| T-2.3.3 | Reader with streaming limits + validation pipeline | T-2.3.1, T-2.1.1 | M | Malicious corpus rejected with codes |
+| T-2.3.2 | ZIP writer (deterministic) | T-2.1.2 | M | Byte-identical double export |
+| T-2.3.3 | Reader with streaming limits + validation pipeline | T-2.1.1 | M | Malicious corpus rejected with codes |
 | T-2.3.4 | Generic ZIP, folder and single-file import | T-2.3.3, T-2.1.3 | S | Overleaf/GitHub ZIP fixtures import |
-| T-2.3.5 | Source ZIP and PDF export | T-2.3.2 | S | Tests |
 | T-2.4.1 | ProjectService + FileService | T-2.2.2-3 | M | Service tests with real IndexedDB |
 | T-2.5.1 | Dashboard UI: list, create from template, rename, duplicate, delete | T-2.4.1, T-1.3.2 | M | e2e create/delete |
 | T-2.5.2 | Import (drop zone, errors list) and export UI | T-2.3.4, T-2.5.1 | S | e2e roundtrip |

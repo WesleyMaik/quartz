@@ -28,9 +28,9 @@ Yes, pending Spike 4 numbers. Project sizes in scientific writing (KB-scale text
 
 Not necessary for the MVP. It stays a possible future backend for large binary contents behind `FileRepository`, triggered only by measured need (ADR-002). Using it now would create two sources of truth.
 
-## 6. Is `.qrtz` suitable long term?
+## 6. Is the project format suitable long term?
 
-Yes. ZIP + JSON + original files remains readable with standard tools indefinitely; the manifest is versioned with forward-compatible minor versions and preserved unknown fields. The main long-term risk is not the container but semantic drift of settings, which is limited by keeping settings optional and documented.
+Yes. A standard ZIP of the original files is readable with common tools indefinitely and carries no app-specific structure ([ADR-003](../decisions/ADR-003-project-format.md)).
 
 ## 7. Most viable LaTeX engine for a browser-native app?
 
@@ -84,7 +84,7 @@ Embedded chat and prompt composer, model integrations, real-time collaboration, 
 3. Replace `apply_patch` (unified diff) with exact-match `edit_file`.
 4. Merge overlapping tools (`read_file`/`read_multiple_files`, `get_project`/`get_project_metadata`).
 5. Drop the `pdf-viewer` package for now; drop vinext.
-6. Rename `.qrtz` `metadata/` to `quartz/` and add a `mimetype` first entry.
+6. Export a standard ZIP of the source tree; the `.qrtz` container was dropped (ADR-003, 2026-11-27).
 7. Treat "AI chat" as an activity panel; exclude `ai-reasoning`, `ai-context-meter`, `ai-prompt-input`, `ai-suggestions` from the MVP.
 8. SwiftLaTeX is not a candidate; the 2026 landscape has better-maintained TeX Live 2026 engines.
 9. Prism shuts down on 2027-01-01, before any MVP can ship: position Quartz as the post-export destination and test Prism exports in Spike 3.

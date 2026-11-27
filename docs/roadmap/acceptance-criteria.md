@@ -19,8 +19,8 @@ Each criterion is testable. "Verified by" names the test level.
 |---|---|---|
 | AC-2.1 | Create, rename, duplicate, delete projects; delete removes every record of that project | browser integration |
 | AC-2.2 | After reload, projects, files and contents are identical | e2e |
-| AC-2.3 | Exporting the same unchanged project twice yields byte-identical `.qrtz` | unit |
-| AC-2.4 | `.qrtz` export → delete → import restores identical file bytes, folders, entry, engine and settings | e2e |
+| AC-2.3 | Exporting the same unchanged project twice yields a byte-identical ZIP | unit |
+| AC-2.4 | ZIP export → delete → import restores identical file bytes and folders, and detects entry and engine | e2e |
 | AC-2.5 | Every sample in the malicious archive corpus is rejected with its expected error code and nothing is written | integration |
 | AC-2.6 | Generic ZIP (Overleaf-style with top-level folder) imports with correct engine and entry detected | integration |
 | AC-2.7 | Storage meter shows usage; persistence state is displayed; warning appears at 80 % | component |
