@@ -9,7 +9,7 @@ export function SettingsRow({
   children,
 }: {
   readonly title: string;
-  readonly description: string;
+  readonly description: ReactNode;
   readonly children: ReactNode;
 }) {
   return (
@@ -50,7 +50,7 @@ export function SelectRow<Value extends string>({
   onChange,
 }: {
   readonly title: string;
-  readonly description: string;
+  readonly description: ReactNode;
   readonly value: Value;
   readonly options: readonly { readonly id: Value; readonly label: string }[];
   readonly onChange: (value: Value) => void;

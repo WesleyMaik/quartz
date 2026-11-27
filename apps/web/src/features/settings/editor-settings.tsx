@@ -2,6 +2,7 @@ import { LOCALE_IDS, LOCALE_NAMES } from "@qrtz/messages";
 import { useIntl } from "react-intl";
 import { EDITOR_FONT_SIZES, type EditorFontSize, useSettings } from "../../app/settings";
 import { type ThemePreference, useTheme } from "../../app/theme";
+import { TRANSLATION_ISSUE_URL } from "../../lib/links";
 import { SelectRow, ToggleRow } from "./settings-row";
 
 const THEMES: readonly ThemePreference[] = ["system", "light", "dark"];
@@ -34,7 +35,29 @@ export function EditorSettings() {
       />
       <SelectRow
         title={intl.formatMessage({ id: "settings.language.title" })}
-        description={intl.formatMessage({ id: "settings.language.description" })}
+        description={
+          <>
+            {intl.formatMessage({ id: "settings.language.description" })}
+            <span className="mt-1 block">
+              {intl.formatMessage(
+                { id: "settings.language.ai_notice" },
+                {
+                  link: (chunks) => (
+                    <a
+                      key="link"
+                      href={TRANSLATION_ISSUE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline underline-offset-2"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                },
+              )}
+            </span>
+          </>
+        }
         value={settings.language}
         options={languages}
         onChange={(language) => settings.update({ language })}

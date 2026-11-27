@@ -46,7 +46,7 @@ export function SettingsDialog({ onClose }: { readonly onClose: () => void }) {
       <div className="flex h-full min-h-0 flex-col gap-4 sm:flex-row sm:gap-6">
         <nav
           aria-label={intl.formatMessage({ id: "settings.sections" })}
-          className="flex shrink-0 gap-1 overflow-x-auto sm:w-40 sm:flex-col"
+          className="flex shrink-0 gap-1 overflow-x-auto sm:min-w-40 sm:flex-col"
         >
           {SECTIONS.map((item) => (
             <button
