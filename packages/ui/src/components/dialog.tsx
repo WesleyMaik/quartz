@@ -40,7 +40,7 @@ export function Dialog({
               {description}
             </BaseDialog.Description>
           )}
-          {children === undefined ? null : <div className="mt-4">{children}</div>}
+          {children === undefined ? null : <div className="mt-4 min-h-0 flex-1">{children}</div>}
           {footer === undefined ? null : (
             <div className="mt-6 flex justify-end gap-2">{footer}</div>
           )}
