@@ -1,8 +1,15 @@
-import { FileRepository, ProjectRepository, QuartzDatabase } from "@qrtz/storage";
+import {
+  FileRepository,
+  ProjectRepository,
+  QuartzDatabase,
+  ThumbnailRepository,
+} from "@qrtz/storage";
 import { createContext, type ReactNode, useContext } from "react";
 import { CompileService } from "../services/compile-service";
 import { FileService } from "../services/file-service";
 import { ProjectService } from "../services/project-service";
+import { renderThumbnail } from "../services/thumbnail-renderer";
+import { ThumbnailService } from "../services/thumbnail-service";
 
 export interface Services {
   readonly db: QuartzDatabase;
@@ -15,11 +22,15 @@ export interface Services {
 export function createServices(): Services {
   const db = new QuartzDatabase();
   const fileRepository = new FileRepository(db);
+  const thumbnails = new ThumbnailService(new ThumbnailRepository(db), renderThumbnail);
   return {
     db,
-    projects: new ProjectService(new ProjectRepository(db)),
+    projects: new ProjectService(new ProjectRepository(db), fileRepository),
     files: new FileService(fileRepository, db),
-    compiler: new CompileService((projectId) => fileRepository.snapshot(projectId)),
+    compiler: new CompileService(
+      (projectId) => fileRepository.snapshot(projectId),
+      (projectId, pdf, snapshotKey) => thumbnails.schedule(projectId, pdf, snapshotKey),
+    ),
   };
 }
 

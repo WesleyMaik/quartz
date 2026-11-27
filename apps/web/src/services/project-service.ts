@@ -2,6 +2,7 @@ import {
   err,
   findTemplate,
   type NewFile,
+  ok,
   type Project,
   type ProjectId,
   parseProjectPath,
@@ -9,11 +10,20 @@ import {
   quartzError,
   type Result,
 } from "@qrtz/document-core";
-import type { ProjectRepository } from "@qrtz/storage";
+import { createProjectZip, projectArchiveName } from "@qrtz/project-format";
+import type { FileRepository, ProjectRepository } from "@qrtz/storage";
+
+export interface ProjectArchive {
+  readonly fileName: string;
+  readonly blob: Blob;
+}
 
 /** Project lifecycle use cases. UI and future agent tools call this, never the repository. */
 export class ProjectService {
-  constructor(private readonly projects: ProjectRepository) {}
+  constructor(
+    private readonly projects: ProjectRepository,
+    private readonly files: FileRepository,
+  ) {}
 
   async createFromTemplate(
     templateId: string,
@@ -48,6 +58,28 @@ export class ProjectService {
 
   duplicate(project: Project) {
     return this.projects.duplicate(project.id, `${project.title} (copy)`);
+  }
+
+  /** Packs the stored project tree into a standard ZIP. Unsaved editor buffers are not included. */
+  async exportZip(project: Project): Promise<Result<ProjectArchive, QuartzError>> {
+    try {
+      const [files, entries] = await Promise.all([
+        this.files.snapshot(project.id),
+        this.files.listTree(project.id),
+      ]);
+      const bytes = await createProjectZip({
+        files,
+        folders: entries.filter((entry) => entry.kind === "folder").map((entry) => entry.path),
+        modifiedAt: new Date(project.updatedAt),
+      });
+      return ok({
+        fileName: projectArchiveName(project.title),
+        blob: new Blob([bytes], { type: "application/zip" }),
+      });
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : String(cause);
+      return err(quartzError("archive.export_failed", `Export failed: ${reason}`));
+    }
   }
 
   delete(id: ProjectId) {

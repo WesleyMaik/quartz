@@ -26,10 +26,12 @@ import { useTheme } from "../../app/theme";
 import { useSidebar } from "../../app/use-sidebar";
 import { formatBytes, formatRelative } from "../../lib/format";
 import { ConfirmDialog } from "../shared/confirm-dialog";
+import { exportProject } from "../shared/export-project";
 import { PromptDialog } from "../shared/prompt-dialog";
 import { QuartzLogo } from "../shared/quartz-logo";
 import { SidebarToggle } from "../shared/sidebar-toggle";
 import { NewProjectDialog } from "./new-project-dialog";
+import { CardThumbnail, RowThumbnail } from "./project-thumbnail";
 import { type DashboardView, useDashboardView } from "./use-dashboard-view";
 
 type EngineFilter = "all" | Engine;
@@ -69,6 +71,11 @@ export function DashboardPage() {
   const sidebar = useSidebar("quartz:dashboard-sidebar");
   const { view, setView } = useDashboardView();
   const sizes = useLiveQuery(() => projects.sizes(), [projects]);
+  const thumbnails = useLiveQuery(
+    async () =>
+      new Map((await db.thumbnails.toArray()).map((item) => [item.projectId, item.image])),
+    [db],
+  );
 
   useEffect(() => {
     void readStorageStatus().then(setStorage);
@@ -107,6 +114,11 @@ export function DashboardPage() {
         const result = await projects.duplicate(project);
         if (!result.ok) toast.error(result.error.message);
       },
+    },
+    {
+      id: "export",
+      label: "Download as ZIP",
+      onSelect: () => void exportProject(projects, project),
     },
     { id: "delete", label: "Delete", destructive: true, onSelect: () => setDeleting(project) },
   ];
@@ -380,11 +392,7 @@ export function DashboardPage() {
                       onClick={() => navigate(`/p/${project.id}`)}
                       className="pressable flex w-full cursor-pointer flex-col overflow-hidden rounded-lg border bg-card text-left hover:border-primary/30 hover:shadow-md"
                     >
-                      <span className="flex aspect-[4/3] items-center justify-center bg-muted/60 text-muted-foreground transition-colors duration-200 group-hover:text-primary">
-                        <span className="flex h-20 w-16 items-center justify-center rounded-sm bg-card shadow-sm transition-transform duration-300 ease-out group-hover:-translate-y-1">
-                          <Icon icon={File01Icon} size={22} />
-                        </span>
-                      </span>
+                      <CardThumbnail image={thumbnails?.get(project.id)} />
                       <span className="flex flex-col gap-1 border-t px-3 py-2.5">
                         <span className="truncate pr-6 font-medium">{project.title}</span>
                         <span className="flex items-center gap-2 text-muted-foreground text-xs">
@@ -418,9 +426,7 @@ export function DashboardPage() {
                         className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-md text-left"
                         onClick={() => navigate(`/p/${project.id}`)}
                       >
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-[color,border-color] duration-150 group-hover:border-primary/30 group-hover:text-primary">
-                          <Icon icon={File01Icon} size={16} />
-                        </span>
+                        <RowThumbnail image={thumbnails?.get(project.id)} />
                         <span className="truncate font-medium">{project.title}</span>
                         <Badge>{engineName(project)}</Badge>
                       </button>

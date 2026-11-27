@@ -84,6 +84,8 @@ const snapshotKeyOf = (snapshot: readonly SnapshotFile[], entry: string): string
     .sort()
     .join(",")}`;
 
+export type BuildListener = (projectId: ProjectId, pdf: Uint8Array, snapshotKey: string) => void;
+
 /**
  * Compiles projects in engine workers. Engines load lazily on first use (no engine code in the
  * initial bundle). Keeps the last successful PDF when a build fails.
@@ -94,7 +96,10 @@ export class CompileService {
   private readonly states = new Map<ProjectId, CompileState>();
   private readonly listeners = new Set<Listener>();
 
-  constructor(private readonly snapshot: (projectId: ProjectId) => Promise<SnapshotFile[]>) {}
+  constructor(
+    private readonly snapshot: (projectId: ProjectId) => Promise<SnapshotFile[]>,
+    private readonly onBuild: BuildListener,
+  ) {}
 
   subscribe = (listener: Listener): (() => void) => {
     this.listeners.add(listener);
@@ -177,6 +182,7 @@ export class CompileService {
         stale: false,
         lastPdf: { bytes: result.pdf, builtAt: new Date(), snapshotKey: result.snapshotKey },
       });
+      this.onBuild(projectId, result.pdf, result.snapshotKey);
       return;
     }
     this.update(projectId, {

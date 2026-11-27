@@ -5,6 +5,7 @@ import {
   ArrowLeft01Icon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
+  Download04Icon,
   Loading03Icon,
   Moon02Icon,
   PlayIcon,
@@ -67,6 +68,7 @@ export function WorkspaceHeader({
   onToggleAutoCompile,
   onCompile,
   onCancel,
+  onExport,
   sidebar,
 }: {
   readonly project: Project;
@@ -76,6 +78,7 @@ export function WorkspaceHeader({
   readonly onToggleAutoCompile: () => void;
   readonly onCompile: () => void;
   readonly onCancel: () => void;
+  readonly onExport: () => void;
   /** Explorer collapse control; omitted on mobile, where files live in a tab. */
   readonly sidebar?: { readonly collapsed: boolean; readonly onToggle: () => void } | undefined;
 }) {
@@ -137,6 +140,10 @@ export function WorkspaceHeader({
         />
         <span aria-hidden="true">Auto</span>
       </div>
+      <Button variant="ghost" size="sm" onClick={onExport} title="Download project as ZIP">
+        <Icon icon={Download04Icon} size={14} />
+        <span className="max-md:sr-only">ZIP</span>
+      </Button>
       {busy ? (
         <Button variant="outline" size="sm" onClick={onCancel}>
           <Icon icon={Cancel01Icon} size={14} />

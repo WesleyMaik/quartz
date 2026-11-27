@@ -7,12 +7,10 @@ import {
   MinusSignIcon,
   PlusSignIcon,
 } from "@qrtz/ui/icons";
-import { GlobalWorkerOptions, getDocument, type PDFDocumentLoadingTask } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { EventBus, PDFLinkService, PDFViewer } from "pdfjs-dist/web/pdf_viewer.mjs";
 import { useEffect, useRef, useState } from "react";
-
-GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+import { downloadBlob } from "../../lib/download";
+import { getDocument, type PDFDocumentLoadingTask } from "../../lib/pdfjs";
+import { EventBus, PDFLinkService, PDFViewer } from "../../lib/pdfjs-viewer";
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 4;
@@ -110,12 +108,7 @@ export function PdfPreview({ bytes, fileName, notice, emptyMessage }: PdfPreview
 
   const download = () => {
     if (bytes === undefined) return;
-    const url = URL.createObjectURL(new Blob([bytes.slice()], { type: "application/pdf" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadBlob(new Blob([bytes.slice()], { type: "application/pdf" }), fileName);
   };
 
   return (

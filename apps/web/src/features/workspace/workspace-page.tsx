@@ -11,6 +11,7 @@ import { MOBILE_QUERY, useMediaQuery } from "../../app/use-media-query";
 import { useSidebar } from "../../app/use-sidebar";
 import { formatTime } from "../../lib/format";
 import { PdfPreview } from "../preview/pdf-preview";
+import { exportProject } from "../shared/export-project";
 import { ProjectLoadingScreen } from "../shared/project-loading-screen";
 import { EditorPane, type EditorPaneHandle } from "./editor-pane";
 import { FileExplorer } from "./file-explorer";
@@ -51,7 +52,7 @@ export function WorkspacePage() {
 }
 
 function Workspace({ project }: { readonly project: Project }) {
-  const { db, compiler } = useServices();
+  const { db, compiler, projects } = useServices();
   const entries = useLiveQuery(
     () => db.files.where("projectId").equals(project.id).sortBy("path"),
     [db, project.id],
@@ -114,6 +115,11 @@ function Workspace({ project }: { readonly project: Project }) {
     await editorRef.current?.flush();
     await compiler.compile(projectRef.current);
   }, [compiler]);
+
+  const exportNow = async () => {
+    await editorRef.current?.flush();
+    await exportProject(projects, projectRef.current);
+  };
 
   // First build when the workspace opens.
   useEffect(() => {
@@ -245,6 +251,7 @@ function Workspace({ project }: { readonly project: Project }) {
         onToggleAutoCompile={() => setAutoCompile((value) => !value)}
         onCompile={() => void compileNow()}
         onCancel={() => compiler.cancel(project)}
+        onExport={() => void exportNow()}
         sidebar={isMobile ? undefined : { collapsed: sidebar.collapsed, onToggle: sidebar.toggle }}
       />
       {isMobile ? (
