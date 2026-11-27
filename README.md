@@ -51,6 +51,8 @@ Quartz takes the opposite approach:
 | Diagnostics mapped to file and line, compile log, last successful PDF preserved        | ✅         |
 | PDF preview with zoom, page navigation, text selection and download                    | ✅         |
 | Document outline across included files, with jump to heading                           | ✅         |
+| Document statistics and PDF details                                                    | ✅         |
+| Settings: editor, PDF viewer and data controls                                         | ✅         |
 | First-page thumbnails in the project list                                              | ✅         |
 | Light and dark themes                                                                  | ✅         |
 | Download a project as a standard ZIP                                                   | ✅         |

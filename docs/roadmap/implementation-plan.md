@@ -96,3 +96,15 @@ Order by value/effort:
 6. Optional integrations: Crossref/OpenAlex lookup by DOI (user-initiated fetch), Zotero (local connector / Better BibTeX export file import) (M each).
 7. Additional exports: Typst HTML export, LaTeX → HTML via LaTeXML (if engine supports) (L).
 8. Collaboration: Yjs + y-codemirror.next over WebRTC (no server is hard: needs signaling; re-evaluate the constraint first) (XL).
+
+## Internationalization (planned)
+
+Quartz ships English text only. Settings already stores a language preference (`system` or `en`, see `apps/web/src/app/locale.ts`), so adding languages changes no stored data.
+
+1. Move interface strings into typed message catalogs, one per locale, with English as the source and the fallback. Includes service error messages, which should become codes plus parameters.
+2. Format numbers, dates and plurals with `Intl` instead of hand-built strings.
+3. Resolve `system` from `navigator.languages`; set `<html lang>` accordingly.
+4. Add locales (Portuguese first), loading each catalog on demand, and check layouts with longer text.
+
+Choose the library, if any, when the work starts; it must be permissive, small and need no runtime network access. Document content is never translated.
+
