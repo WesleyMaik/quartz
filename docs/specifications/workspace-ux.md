@@ -46,7 +46,7 @@ Desktop-first (≥ 1280 px primary, ≥ 1024 px supported, < 1024 px read-mostly
 
 ### Outline
 
-Collapsible section below the file tree (and in the mobile files tab and drawer). It lists the headings of the document compiled from the entry file, following included files in document order; for a source the document does not include, it shows that file's own headings. Selecting a heading opens the file at its line. It updates on autosave.
+Collapsible section below the file tree (and in the mobile files tab and drawer). It lists the headings of the document compiled from the entry file, following included files in document order; for a source the document does not include, it shows that file's own headings. Selecting a heading opens the file at its line. It updates on autosave. The panel height and the desktop sidebar width are draggable (pointer, touch, arrows, Home/End; double click restores the default), limited so the file tree, editor and preview stay usable, and remembered in the browser. Sidebar: 180 to 480 px and at most 35% of the window. Outline: at least 104 px, leaving 160 px for the file tree.
 
 - LaTeX: `\part` to `\subparagraph` (starred included) and Beamer frame titles; `\input`, `\include`, `\subfile`, `\import` and `\subimport` are followed.
 - Typst: `=` headings and `#heading(...)[...]`; `#include` is followed.
