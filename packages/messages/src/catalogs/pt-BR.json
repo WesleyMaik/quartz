@@ -26,6 +26,7 @@
   "settings.theme.dark": "Escuro",
   "settings.language.title": "Idioma",
   "settings.language.description": "Idioma da interface. Seus documentos nunca são traduzidos.",
+  "settings.language.ai_notice": "As traduções são feitas com IA. <link>Reportar um problema de tradução</link>",
   "settings.language.system": "Padrão do sistema",
   "settings.font_size.title": "Tamanho da fonte",
   "settings.font_size.description": "Tamanho do texto no editor.",

@@ -26,6 +26,7 @@
   "settings.theme.dark": "ダーク",
   "settings.language.title": "言語",
   "settings.language.description": "画面の表示言語です。文書が翻訳されることはありません。",
+  "settings.language.ai_notice": "翻訳は AI によるものです。<link>翻訳の問題を報告</link>",
   "settings.language.system": "システムのデフォルト",
   "settings.font_size.title": "フォントサイズ",
   "settings.font_size.description": "エディターの文字の大きさです。",

@@ -26,6 +26,7 @@
   "settings.theme.dark": "深色",
   "settings.language.title": "語言",
   "settings.language.description": "介面語言。你的文件永遠不會被翻譯。",
+  "settings.language.ai_notice": "翻譯由 AI 產生。<link>回報翻譯問題</link>",
   "settings.language.system": "系統預設",
   "settings.font_size.title": "字型大小",
   "settings.font_size.description": "編輯器中的文字大小。",

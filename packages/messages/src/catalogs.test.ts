@@ -6,7 +6,9 @@ import { englishMessages, LOCALE_IDS, loadMessages } from "./index";
 const argumentsOf = (elements: readonly MessageFormatElement[]): string[] =>
   elements.flatMap((element) => {
     if (element.type === TYPE.literal || element.type === TYPE.pound) return [];
-    if (element.type === TYPE.tag) return argumentsOf(element.children);
+    if (element.type === TYPE.tag) {
+      return [`<${element.value}>`, ...argumentsOf(element.children)];
+    }
     if (element.type === TYPE.plural || element.type === TYPE.select) {
       const branches = Object.values(element.options).flatMap((option) =>
         argumentsOf(option.value),
